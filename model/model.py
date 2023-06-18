@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
+from util import MinPool
 
 class double_conv2d_bn(nn.Module):
     def __init__(self, in_channels, out_channels, kernel_size=3, strides=1, padding=1):
@@ -55,6 +55,14 @@ class Unet(nn.Module):
         self.deconv4 = deconv2d_bn(16, 8)
 
         self.sigmoid = nn.Sigmoid()
+        self.erode = MinPool(2,2,1)
+        self.dilate = nn.MaxPool2d(2, stride = 1)
+
+    def build_result(self, x, y):
+        return {
+            "mask": x,
+            "edge": y,
+        }
 
     def forward(self, x):
         conv1 = self.layer1_conv(x)
@@ -88,4 +96,6 @@ class Unet(nn.Module):
         conv9 = self.layer9_conv(concat4)
         outp = self.layer10_conv(conv9)
         outp = self.sigmoid(outp)
-        return outp
+        edge = nn.functional.pad(outp, (1, 0, 1, 0))
+        edge = self.dilate(edge) - self.erode(edge)
+        return self.build_result(outp, edge)

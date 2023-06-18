@@ -1,14 +1,13 @@
-from model.RESUnetGAN import *
-from model.DQ.FLHD import FLHD
+
 import torch
 import torch.nn as nn
 import pytorch_lightning as pl
 from dataloader import Dataload
-from model.util import *
+
 import os
 from torch.utils.data import DataLoader
 from utils.score import cal_all_score
-
+from utils.show import display_progress
 
 class DFGAN(pl.LightningModule):
 

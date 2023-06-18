@@ -11,8 +11,9 @@ import torchvision.transforms as transforms
 import matplotlib
 import matplotlib.pyplot as plt
 
-import model.model
-from model.util import display_progress
+
+from utils.score import cal_all_score
+from utils.show import display_progress
 
 use_gpu = torch.cuda.is_available()
 torch.cuda.manual_seed(3407)
@@ -47,10 +48,17 @@ class Train():
     def create(self, is_show):
 
         if (self.method_type == 0):
-            self.model = model.Unet()
+            from model.model import Unet as Model
+            self.model = Model()
             print("build Unet model")
+            
+        elif self.method_type == 1:
+            from model.RESUNet import RESUNet as Model
+            self.model = Model()
+            print("build RESUNet model")
+        else:
             raise NotImplementedError
-        self.model = model.Unet()
+        
         self.cost = torch.nn.MSELoss()
         if (use_gpu):
             self.model = self.model.to(device)
@@ -134,6 +142,8 @@ class Train():
 
         for data in data_loader_train:
             X_train, y_train = data
+            y_gt = y_train[0]
+            y_edge = y_train[1]
             X_train, y_train = Variable(X_train).float(), Variable(y_train)
             if (use_gpu):
                 X_train = X_train.to(device)
@@ -142,7 +152,7 @@ class Train():
             self.optimizer.zero_grad()
 
             outputs = self.model(X_train)
-            loss = self.cost(outputs, y_train)
+            loss = self.cost(outputs["mask"], y_train)
             # loss = loss.float()
             loss.backward()
             self.optimizer.step()
