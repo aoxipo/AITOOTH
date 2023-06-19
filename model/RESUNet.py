@@ -7,13 +7,13 @@ from torchsummary import summary
 from .util import MinPool
 
 class ResBlock(nn.Module):
-    def __init__(self, in_channels, out_channels, stride=1):
+    def __init__(self, in_channels, out_channels, stride = 1):
         super().__init__()
         self.layer = nn.Sequential(
-            nn.Conv2d(in_channels,out_channels,kernel_size=3, padding=1, stride=stride, bias=False),
+            nn.Conv2d(in_channels,out_channels,kernel_size=3, padding = 1, stride = stride),
             nn.BatchNorm2d(out_channels),
             nn.ReLU(inplace=True),
-            nn.Conv2d(out_channels, out_channels,kernel_size=3,padding=1, stride=1, bias=False),
+            nn.Conv2d(out_channels, out_channels,kernel_size = 3,padding = 1, stride = 1),
             nn.BatchNorm2d(out_channels),
             nn.ReLU(inplace=True)
         )
@@ -66,6 +66,7 @@ class RESUNet(nn.Module):
         self.dropout = nn.Dropout2d(dropout_rate)
         self.erode = MinPool(2,2,1)
         self.dilate = nn.MaxPool2d(2, stride = 1)
+        self.sig = nn.Sigmoid()
         
     def forward(self, inputs):
         ###################### Enocoder #########################
@@ -86,8 +87,7 @@ class RESUNet(nn.Module):
         d1 = self.decoding_layer1_(d2, e1)
         
         ###################### Output #########################
-        output = self.output(d1)
-
+        output =  self.sig(self.output(d1))
         edge = nn.functional.pad(output, (1, 0, 1, 0))
         edge = self.dilate(edge) - self.erode(edge)
         # edge = self.output_edge(edge)

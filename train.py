@@ -96,7 +96,7 @@ class Train():
                 for image, mask in data_loader_test:
                     result = self.predict_batch(image)
                     break
-                utils.display_progress(image[0], mask[0], result[0], current_epoch=epoch, save_path='perdict')
+                display_progress(image[0], mask[0], result[0], current_epoch=epoch, save_path='perdict')
             if (epoch <= 4):
                 continue
             if (epoch_test_loss < best_loss):

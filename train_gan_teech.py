@@ -184,7 +184,7 @@ class DFGAN(pl.LightningModule):
                 f"Epoch {self.current_epoch} : Generator loss: {gen_mean},  Critic loss: {crit_mean} " + log_str
             )
             real = real[0]
-            display_progress(condition[0], real[0], (fake[0] + edge[0]), self.current_epoch, (20,15),True, self.save_path)
+            display_progress(condition[0], real[0], fake[0], edge[0], self.current_epoch, (20,15),True, self.save_path)
         
     # def validation_step(self, batch, batch_idx):
     #     condition, real = batch
