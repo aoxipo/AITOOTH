@@ -73,15 +73,16 @@ class Unet(nn.Module):
     def __init__(self, need_return_dict = True):
         super(Unet, self).__init__()
         self.need_return_dict = need_return_dict
-        self.layer1_conv = RCS(1, 8)
-        self.layer2_conv = RCS(8, 16)
-        self.layer3_conv = RCS(16, 32)
-        self.layer4_conv = RCS(32, 64)
-        self.layer5_conv = RCS(64, 128)
-        self.layer6_conv = RCS(128, 64)
-        self.layer7_conv = RCS(64, 32)
-        self.layer8_conv = RCS(32, 16)
-        self.layer9_conv = RCS(16, 8)
+        self.layer1_conv = double_conv2d_bn(1, 8)
+        self.layer2_conv = double_conv2d_bn(8, 16)
+        self.layer3_conv = double_conv2d_bn(16, 32)
+        self.layer4_conv = double_conv2d_bn(32, 64)
+        self.layer5_conv = double_conv2d_bn(64, 128)
+        self.layer6_conv = double_conv2d_bn(128, 64)
+        self.layer7_conv = double_conv2d_bn(64, 32)
+        self.layer8_conv = double_conv2d_bn(32, 16)
+        self.layer9_conv = double_conv2d_bn(16, 8)
+        
         self.layer10_conv = nn.Conv2d(8, 1, kernel_size = 3,
                                       stride = 1, padding = 1, bias=True)
 
@@ -142,15 +143,15 @@ class RUnet(nn.Module):
     def __init__(self, need_return_dict = True):
         super(RUnet, self).__init__()
         self.need_return_dict = need_return_dict
-        self.layer1_conv = double_conv2d_bn(1, 8)
-        self.layer2_conv = double_conv2d_bn(8, 16)
-        self.layer3_conv = double_conv2d_bn(16, 32)
-        self.layer4_conv = double_conv2d_bn(32, 64)
-        self.layer5_conv = double_conv2d_bn(64, 128)
-        self.layer6_conv = double_conv2d_bn(128, 64)
-        self.layer7_conv = double_conv2d_bn(64, 32)
-        self.layer8_conv = double_conv2d_bn(32, 16)
-        self.layer9_conv = double_conv2d_bn(16, 8)
+        self.layer1_conv = RCS(1, 8)
+        self.layer2_conv = RCS(8, 16)
+        self.layer3_conv = RCS(16, 32)
+        self.layer4_conv = RCS(32, 64)
+        self.layer5_conv = RCS(64, 128)
+        self.layer6_conv = RCS(128, 64)
+        self.layer7_conv = RCS(64, 32)
+        self.layer8_conv = RCS(32, 16)
+        self.layer9_conv = RCS(16, 8)
         self.layer10_conv = nn.Conv2d(8, 1, kernel_size = 3,
                                       stride = 1, padding = 1, bias=True)
 

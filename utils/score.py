@@ -31,6 +31,9 @@ class Cal_Score():
         return fid_avg, cdc_avg
 import torch
 def cal_dice(mask, gt):
+
+
+
     union = mask * gt
     dice = 2* torch.sum(union, [1,2,3])/(torch.sum(mask, [1,2,3])+torch.sum(gt, [1,2,3]))
     return torch.mean(dice)
@@ -44,6 +47,9 @@ def cal_Hausdorff(mask, gt):
     return torch.mean(torch.sum(torch.abs(mask - gt), [1,2,3]))
 
 def cal_all_score(mask, gt):
+    mask[mask<0.5] = 0
+    mask[mask>0.5] = 1
+    
     dice = cal_dice(mask, gt)
     iou = cal_iou(mask, gt)
     hausdorff = cal_Hausdorff(mask, gt)
