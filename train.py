@@ -11,7 +11,7 @@ import torchvision.transforms as transforms
 import matplotlib
 import matplotlib.pyplot as plt
 
-
+from utis.adploss import AdpLoss
 from utils.score import cal_all_score
 from utils.show import display_progress
 
@@ -32,7 +32,7 @@ print("use gpu:", use_gpu)
 
 
 class Train():
-    def __init__(self, in_channles, image_size=320, name='dense', method_type=0, is_show=True):
+    def __init__(self, in_channles, image_size = 320, name = 'dense', method_type = 0, is_show = True):
         self.in_channels = in_channles
 
         self.image_size = image_size
@@ -56,6 +56,10 @@ class Train():
             from model.RESUNet import RESUNet as Model
             self.model = Model()
             print("build RESUNet model")
+        elif self.method_type == 2:
+            from model.model import RUnet as Model
+            self.model = Model()
+            print("build RU model")
         else:
             raise NotImplementedError
         
@@ -67,6 +71,7 @@ class Train():
             summary(self.model, (self.in_channels, self.image_size * 2, self.image_size))
 
         self.optimizer = torch.optim.Adam(self.model.parameters(), lr=self.lr, betas=(0.5, 0.999))
+        self.adp = AdpLoss()
 
     def train_and_test(self, n_epochs, data_loader_train, data_loader_test):
         best_loss = 1000000
@@ -94,9 +99,10 @@ class Train():
             )
             if epoch % 10 == 0:
                 for image, mask in data_loader_test:
-                    result = self.predict_batch(image)
+                    mask = mask[0].to(device)
+                    result1, result2 = self.predict_batch(image)
                     break
-                display_progress(image[0], mask[0], result[0], current_epoch=epoch, save_path='perdict')
+                display_progress(image[0], mask[0][0].unsqueeze(0), result1[0], current_epoch=epoch, save=True, save_path='perdict')
             if (epoch <= 4):
                 continue
             if (epoch_test_loss < best_loss):
@@ -120,14 +126,19 @@ class Train():
         with torch.no_grad():
             for data in data_loader_test:
                 X_test, y_test = data
-                X_test, y_test = Variable(X_test).float(), Variable(y_test)
+                y_gt = y_test[0]
+                y_edge = y_test[1]
+                X_test, y_gt, y_edge = Variable(X_test).float(), Variable(y_gt), Variable(y_edge)
                 if (use_gpu):
                     X_test = X_test.to(device)
-                    y_test = y_test.to(device)
+                    y_gt = y_gt.to(device)
+                    y_edge = y_edge.to(device)
 
                 outputs = self.model(X_test)
 
-                loss = self.cost(outputs, y_test)
+                loss1 = self.cost(outputs["mask"], y_gt)
+                loss2 = self.cost(outputs["edge"], y_edge)
+                loss = loss2 + loss1
 
                 running_loss += loss.data.item()
                 test_index += 1
@@ -144,15 +155,19 @@ class Train():
             X_train, y_train = data
             y_gt = y_train[0]
             y_edge = y_train[1]
-            X_train, y_train = Variable(X_train).float(), Variable(y_train)
+            X_train, y_gt, y_edge = Variable(X_train).float(), Variable(y_gt), Variable(y_edge)
             if (use_gpu):
                 X_train = X_train.to(device)
-                y_train = y_train.to(device)
+                y_gt = y_gt.to(device)
+                y_edge = y_edge.to(device)
             # print("训练中 train {}".format(X_train.shape))
             self.optimizer.zero_grad()
 
             outputs = self.model(X_train)
-            loss = self.cost(outputs["mask"], y_train)
+            loss1 = self.cost(outputs["mask"], y_gt)
+            loss2 = self.cost(outputs["edge"], y_edge)
+            loss = self.adp(loss_main = loss1, loss_other = loss2)
+            # loss = loss2 + loss1
             # loss = loss.float()
             loss.backward()
             self.optimizer.step()
@@ -175,8 +190,8 @@ class Train():
                 image = image.to(device)
             print(image.shape)
             output = self.model(image)
-        # return output['pred_logits'],output['pred_boxes']直接返回output
-        return output
+        return output['mask'], output['edge']
+        # return output
 
     def save_history(self, file_path='./save/'):
         file_path = file_path + self.name + "/"
@@ -213,9 +228,9 @@ class Train():
 def trainTest():
     batch_size = 32
     image_size = 224
-    data_path = r"F:\PyTestProject\AliProject\train"
+    data_path = r'/data0/lijunlin_data/teech/train/'
 
-    All_dataloader = Dataload(r'F:\PyTestProject\AliProject\train')
+    All_dataloader = Dataload(data_path)
 
     train_size = int(All_dataloader.__len__() * 0.8)
     validate_size = All_dataloader.__len__() - train_size
@@ -258,13 +273,13 @@ def perdit():
 
 if __name__ == "__main__":
     batch_size = 32
-    image_size = 320
-    train_path = r'E:\Data\Frame\train\dark\frames'
-    label_path = r'E:\Data\Frame\train\src\frames'
+    image_size = 224
+    train_path = r'/data0/lijunlin_data/teech/train/'
+    # label_path = r'E:\Data\Frame\train\src\frames'
     # All_dataloader = Dataload(r'H:\DATASET\COLORDATA\train\train_frame', r'H:\DATASET\COLORDATA\train_gt\train_gt_frame')
     # All_dataloader = Dataload(train_path, label_path, image_shape=(image_size, image_size))
 
-    All_dataloader = Dataload(r'F:\PyTestProject\AliProject\train')
+    All_dataloader = Dataload(train_path)
     train_size = int(All_dataloader.__len__() * 0.8)
     validate_size = All_dataloader.__len__() - train_size
 
@@ -295,8 +310,8 @@ if __name__ == "__main__":
 
     trainer = Train(
         1, image_size,
-        name="SCSUNet_D",
-        method_type=3,
+        name="UNet",
+        method_type=0,
         is_show=False
     )
     trainer.train_and_test(100, train_loader, validate_loader)

@@ -210,7 +210,15 @@ class Hourglass(nn.Module):
         return up1 + up2
 
 class HgDiffusion(nn.Module):
-    def __init__(self, nstack, input_channel, output_channel, conv_method = 'Conv', bn=False, increase=0, dropout_rate = 0.2, middle_channel = [64,128,256,512]):
+    def __init__(self, 
+                 nstack, 
+                 input_channel, 
+                 output_channel, 
+                 conv_method = 'Conv', 
+                 bn = False, 
+                 increase = 0, 
+                 dropout_rate = 0.2, 
+                 middle_channel = [64,128,256,512]):
         super().__init__()
         self.nstack = nstack
         self.input_channel = input_channel
@@ -228,7 +236,8 @@ class HgDiffusion(nn.Module):
         self.conv = self.conv_type_dict[self.Conv_method]
         self.hgs = nn.ModuleList( [
             nn.Sequential(
-                Generator(input_channel, output_channel, middle_channel = middle_channel),
+                # Generator(input_channel, output_channel, middle_channel = middle_channel),
+                Hourglass(4, input_channel)
             ) for i in range(nstack)] 
         )
         self.features = nn.ModuleList( [
@@ -242,6 +251,7 @@ class HgDiffusion(nn.Module):
         self.merge_preds = nn.ModuleList( [self.conv(output_channel, output_channel, padding = pad_fix) for i in range(nstack-1)] )
         #self.final = nn.Conv2d(nstack * 3,3,1,1)
         self.relu = nn.ReLU()
+
     def forward(self, inputs):
         P,C,W,H = inputs.size()
         if( C == 1 or C == 3):

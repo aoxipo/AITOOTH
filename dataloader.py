@@ -119,6 +119,12 @@ class Dataload(Dataset):
     def get_edge(self, x):
         x = cv2.Canny(x, 20, 100, L2gradient=True)
         return x
+    
+    def add_noise(self, x):
+        a = cv2.Sobel(x, cv2.CV_64F, 1, 0)
+        alpha = np.random.random() * 0.5
+        y = alpha * a + (1 - alpha) * x 
+        return y
 
     def __getitem__(self, index):
         """
@@ -138,6 +144,8 @@ class Dataload(Dataset):
                 if self.datagen is not None:
                     seed = torch.random.seed()
                     torch.random.manual_seed(seed)
+                    if np.random.random() > 0.5:
+                        image_src = self.add_noise(image_src)
                     image_src = self.datagen(image_src)
 
                 image_mask = self.read_image_data(image_gt_path, True) 

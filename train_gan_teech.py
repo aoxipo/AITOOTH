@@ -3,12 +3,12 @@ import torch
 import torch.nn as nn
 import pytorch_lightning as pl
 from dataloader import Dataload
-
+from model.RESUnetGAN import Critic
 import os
 from torch.utils.data import DataLoader
 from utils.score import cal_all_score
 from utils.show import display_progress
-
+from model.util import OpenOpt
 class DFGAN(pl.LightningModule):
 
     def __init__(self, in_channels, out_channels, method_type = 0, learning_rate=0.0002, lambda_recon=100, display_step=10, lambda_gp=10, lambda_r1=10, middle_channel =  [64,128,256,512]):
@@ -16,6 +16,7 @@ class DFGAN(pl.LightningModule):
         self.save_hyperparameters()
         self.display_step = display_step
         self.nstack = 2
+
         if method_type == 0:
             self.generator = FLHD(
                 in_channel = in_channels,
@@ -33,25 +34,45 @@ class DFGAN(pl.LightningModule):
                 n_hier = [64, 128, 256],
                 n_logistic_mix = 10,
             )
-        if method_type == 1:
+            print("build FLHD")
+        elif method_type == 1:
             from model.RESUNet import RESUNet
             self.generator = RESUNet(1,1)
+            print("build RESUNet")
+        elif method_type == 2:
+            from model.model import Unet as Model
+            self.generator = Model(False)
+            print("build Unet")
+        elif method_type == 3:
+            from model.model import RUnet as Model
+            self.generator = Model(False)
+            print("build RUnet")
+        elif method_type == 4:
+            from model.RESUnetGAN import HgDiffusion as Model
+            self.generator = Model(1, 1, 1)
+            print("build HgDiffusion")
+        elif method_type == 4:
+            from model.FPN import FL as Model
+            self.generator = Model(1, 1)
+            print("build Focus on local")
         else:
             raise NotImplementedError
+
         self.critic = Critic(out_channels)
-        self.generator.apply(self._weights_init)
-        self.critic.apply(self._weights_init)
+        # self.generator.apply(self._weights_init)
+        # self.critic.apply(self._weights_init)
         self.optimizer_G = torch.optim.Adam(self.generator.parameters(), lr=learning_rate, betas=(0.5, 0.9))
         self.optimizer_C = torch.optim.Adam(self.critic.parameters(), lr=learning_rate, betas=(0.5, 0.9))
-        self.scaler_G = torch.cuda.amp.GradScaler(enabled = True )
-        self.scaler_C = torch.cuda.amp.GradScaler(enabled = True )
+        # self.scaler_G = torch.cuda.amp.GradScaler(enabled = True )
+        # self.scaler_C = torch.cuda.amp.GradScaler(enabled = True )
+        self.OpenOpt = OpenOpt()
         self.lambda_recon = lambda_recon
         self.lambda_gp = lambda_gp
         self.lambda_r1 = lambda_r1
         self.recon_criterion = nn.MSELoss()
         self.cross_entropy = nn.CrossEntropyLoss()
         self.generator_losses, self.critic_losses  = [],[]
-        self.save_path = "./save/FLHD/"
+        self.save_path = f"./save/{type(self.generator).__name__}/"
         # self.cal_score = Cal_Score(batch_size)
     
     def _weights_init(self, m):
@@ -68,14 +89,14 @@ class DFGAN(pl.LightningModule):
         # WGAN has only a reconstruction loss
         self.optimizer_G.zero_grad()
 
-        conditioned_images = conditioned_images.to(torch.float16)
-        real_images_mask = real_images[0].to(torch.float16)
-        real_images_edge = real_images[1].to(torch.float16)
+        conditioned_images = conditioned_images.to(torch.float32)
+        real_images_mask = real_images[0].to(torch.float32)
+        real_images_edge = real_images[1].to(torch.float32)
 
         real_images = real_images_mask
 
-        with torch.cuda.amp.autocast(enabled=True):
-            fake_images, great_image = self.generator(conditioned_images)
+        #with torch.cuda.amp.autocast(enabled=True):
+        fake_images, great_image = self.generator(conditioned_images)
         
         # recon_loss = 0
         # beta = (self.nstack + 1) * self.nstack / 2
@@ -84,24 +105,28 @@ class DFGAN(pl.LightningModule):
         #     # label = alpha * real_images + ( 1 - alpha ) * conditioned_images
         #     recon_loss += ( alpha / beta ) * self.recon_criterion(fake_images[i], real_images)
         # assert False,(great_image.shape, real_images_224.shape)
-        recon_loss = self.recon_criterion(fake_images, real_images) + self.recon_criterion(great_image, real_images_edge)
+        recon_loss = self.recon_criterion(fake_images, real_images) 
+        if recon_loss.item() < 0.2:
+            recon_loss += self.recon_criterion(great_image, real_images_edge)
 
-        self.scaler_G.scale(recon_loss).backward()
-        self.scaler_G.unscale_(self.optimizer_G)
-        torch.nn.utils.clip_grad_norm_(self.generator.parameters(), 2)
-        self.scaler_G.step(self.optimizer_G)
-        self.scaler_G.update()
-        #recon_loss.backward()
-        #self.optimizer_G.step()
+        # self.scaler_G.scale(recon_loss).backward()
+        # self.scaler_G.unscale_(self.optimizer_G)
+        # torch.nn.utils.clip_grad_norm_(self.generator.parameters(), 2)
+        # self.scaler_G.step(self.optimizer_G)
+        # self.scaler_G.update()
+
+        recon_loss.backward()
+        self.optimizer_G.step()
         
         # Keep track of the average generator loss
         self.generator_losses += [recon_loss.item()/self.nstack]
 
     def predict_step(self, conditioned_images):
+        self.generator.eval()
         with torch.no_grad():
-            with torch.cuda.amp.autocast(enabled=True):
-                fake_images,_ = self.generator(conditioned_images)
-        return fake_images
+            #with torch.cuda.amp.autocast(enabled=True):
+            fake_images, great_image = self.generator(conditioned_images)
+        return fake_images, great_image
     
 
     def predict_batch(self, image):
@@ -113,22 +138,23 @@ class DFGAN(pl.LightningModule):
         with torch.no_grad():
             with torch.cuda.amp.autocast(enabled=True):
                 image = image.to(device)
-                image = image.to(torch.float16)
+                image = image.to(torch.float32)
                 fake_images,_ = self.generator(image)
         return fake_images.detach().squeeze(0).permute(1,2,0).cpu().numpy()
         
     def critic_step(self, real_images, conditioned_images):
         
         with torch.no_grad():
-            with torch.cuda.amp.autocast(enabled=True):
-                conditioned_images = conditioned_images.to(torch.float16)
-                fake_images, edge_images , = self.generator(conditioned_images)
+            #with torch.cuda.amp.autocast(enabled=True):
+            conditioned_images = conditioned_images.to(torch.float32)
+            fake_images, edge_images = self.generator(conditioned_images)
             #fake_images = fake_images[-1]
         self.optimizer_C.zero_grad()
         real_images_mask = real_images[0]
         real_images_edge = real_images[1]
         real_images = real_images_mask
-        fake_images = fake_images.float()
+        # fake_images = fake_images.float()
+        # print(fake_images.shape)
         fake_logits = self.critic(fake_images)
         real_logits = self.critic(real_images)
             
@@ -154,15 +180,15 @@ class DFGAN(pl.LightningModule):
         r1_reg = gradients.pow(2).sum(1).mean()
         loss_C += self.lambda_r1 * r1_reg
 
-        self.scaler_C.scale(loss_C).backward()
-        self.scaler_C.unscale_(self.optimizer_C)
-        torch.nn.utils.clip_grad_norm_(self.critic.parameters(), 2)
-        self.scaler_C.step(self.optimizer_C)
-        self.scaler_C.update()
+        # self.scaler_C.scale(loss_C).backward()
+        # self.scaler_C.unscale_(self.optimizer_C)
+        # torch.nn.utils.clip_grad_norm_(self.critic.parameters(), 2)
+        # self.scaler_C.step(self.optimizer_C)
+        # self.scaler_C.update()
 
         # Backpropagation
-        # loss_C.backward()
-        # self.optimizer_C.step()
+        loss_C.backward()
+        self.optimizer_C.step()
         self.critic_losses += [loss_C.item()]
         
     def training_step(self, batch, batch_idx, optimizer_idx):
@@ -174,8 +200,11 @@ class DFGAN(pl.LightningModule):
         gen_mean = sum(self.generator_losses[-self.display_step:]) / self.display_step
         crit_mean = sum(self.critic_losses[-self.display_step:]) / self.display_step
         if self.current_epoch % self.display_step==0 and batch_idx==0 and optimizer_idx==1:
-            fake, edge, = self.generator(condition)
+            fake, edge, = self.predict_step(condition)
             # fake = fake[-1].detach()
+            # assert False, fake.shape
+            fake = self.OpenOpt(fake)
+            edge = self.OpenOpt(edge)
             torch.save(self.generator.state_dict(), self.save_path +"/ResUnet_"+ str(self.current_epoch) +".pt")
             torch.save(self.critic.state_dict(), self.save_path +"/PatchGAN_"+ str(self.current_epoch) +".pt")
             score_list = cal_all_score(fake, condition)
@@ -203,7 +232,7 @@ def predict_from_dataloader(test_loader, cwgan, save_path = './image/'):
     with torch.no_grad():
         for batch_idx, batch in enumerate(test_loader):
             real, condition = batch
-            condition = condition.to(torch.float16)
+            condition = condition.to(torch.float32)
             condition = condition.to(device)
             pred = cwgan.generator(condition).detach().squeeze().permute(1, 2, 0)
             pred = np.array((pred - np.min(pred))/(np.max(pred) - np.min(pred)) * 255, dtype = np.uint8)
@@ -239,6 +268,54 @@ def vis(folder_path, save_path = r'E:\Data\Frame\test_frames\result_ADQAE/'):
             cv2.imwrite("{}/f{:03}.png".format(save_path_folder, index), pred)
 
 
+
+
+
+# def train_coco():
+#     batch_size = 16
+#     image_size = 224
+#     train_path = r'/data0/lijunlin_data/train2017/'
+#     label_path = '' #r'E:\Data\Frame\train\src\frames'
+#     #All_dataloader = Dataload(r'H:\DATASET\COLORDATA\train\train_frame', r'H:\DATASET\COLORDATA\train_gt\train_gt_frame')
+#     All_dataloader = Dataload(train_path,label_path, image_shape = (image_size, image_size), data_type='coco')
+#     train_size = int(len(All_dataloader.photo_set) * 0.1)
+#     validate_size = len(All_dataloader.photo_set) - train_size
+
+#     train_dataset, validate_dataset = torch.utils.data.random_split(All_dataloader
+#                                                                     , [train_size, validate_size])
+#     print("train {} test {} , ".format(train_size, validate_size))
+
+#     train_loader = DataLoader(
+#         dataset=train_dataset,
+#         batch_size=batch_size,
+#         shuffle=True,
+#         drop_last=True,
+#     )
+#     validate_loader = DataLoader(
+#         dataset=validate_dataset,
+#         batch_size=batch_size,
+#         shuffle=True,
+#         drop_last=True,
+#     )
+
+#     cwgan = DFGAN(
+#         in_channels = 1, 
+#         out_channels = 1 ,
+#         learning_rate=2e-4, 
+#         lambda_recon=100, 
+#         display_step=5, 
+#     )
+#     cwgan.save_path = "./save/PHDAE/"
+#     if not os.path.exists(cwgan.save_path):
+#         os.mkdir(cwgan.save_path)
+#     if not os.path.exists(cwgan.save_path + 'val'):
+#         os.mkdir(cwgan.save_path + 'val')
+#     trainer = pl.Trainer(max_epochs=71, gpus = [int(device[-1])])
+#     #cwgan.generator.load_state_dict(torch.load('/home/lijunlin/Project/AIColor/save/dgan_256_256/ResUnet_END.pt'))
+#     #cwgan.critic.load_state_dict(torch.load('/home/lijunlin/Project/AIColor/save/dgan_256_256/PatchGAN_END.pt'))
+#     trainer.fit(cwgan, train_loader, validate_loader)
+#     torch.save(cwgan.generator.state_dict(), cwgan.save_path +"ResUnet_END.pt")
+#     torch.save(cwgan.critic.state_dict(), cwgan.save_path  +"PatchGAN_END.pt")
 def train():
     batch_size = 32
     image_size = 256
@@ -272,15 +349,14 @@ def train():
     )
 
     cwgan = DFGAN(
-        method_type = 1,
+        method_type = 4,
         in_channels = 1, 
         out_channels = 1,
-        learning_rate=2e-5, 
-        lambda_recon=100, 
+        learning_rate = 2e-5, 
+        lambda_recon = 100, 
         display_step = 10, 
-        middle_channel= [32,64,128,256]
     )
-    cwgan.save_path = "./save/resUnet/"
+    
     print(cwgan.save_path)
     if not os.path.exists(cwgan.save_path):
         os.mkdir(cwgan.save_path)
@@ -292,56 +368,7 @@ def train():
     trainer.fit(cwgan, train_loader, validate_loader)
     torch.save(cwgan.generator.state_dict(), cwgan.save_path +"ResUnet_END.pt")
     torch.save(cwgan.critic.state_dict(), cwgan.save_path  +"PatchGAN_END.pt")
-
-
-def train_coco():
-    batch_size = 16
-    image_size = 224
-    train_path = r'/data0/lijunlin_data/train2017/'
-    label_path = '' #r'E:\Data\Frame\train\src\frames'
-    #All_dataloader = Dataload(r'H:\DATASET\COLORDATA\train\train_frame', r'H:\DATASET\COLORDATA\train_gt\train_gt_frame')
-    All_dataloader = Dataload(train_path,label_path, image_shape = (image_size, image_size), data_type='coco')
-    train_size = int(len(All_dataloader.photo_set) * 0.1)
-    validate_size = len(All_dataloader.photo_set) - train_size
-
-    train_dataset, validate_dataset = torch.utils.data.random_split(All_dataloader
-                                                                    , [train_size, validate_size])
-    print("train {} test {} , ".format(train_size, validate_size))
-
-    train_loader = DataLoader(
-        dataset=train_dataset,
-        batch_size=batch_size,
-        shuffle=True,
-        drop_last=True,
-    )
-    validate_loader = DataLoader(
-        dataset=validate_dataset,
-        batch_size=batch_size,
-        shuffle=True,
-        drop_last=True,
-    )
-
-    cwgan = DFGAN(
-        in_channels = 3, 
-        out_channels = 3 ,
-        learning_rate=2e-4, 
-        lambda_recon=100, 
-        display_step=5, 
-        middle_channel= [32,64,128,256]
-    )
-    cwgan.save_path = "./save/PHDAE/"
-    if not os.path.exists(cwgan.save_path):
-        os.mkdir(cwgan.save_path)
-    if not os.path.exists(cwgan.save_path + 'val'):
-        os.mkdir(cwgan.save_path + 'val')
-    trainer = pl.Trainer(max_epochs=71, gpus = [int(device[-1])])
-    #cwgan.generator.load_state_dict(torch.load('/home/lijunlin/Project/AIColor/save/dgan_256_256/ResUnet_END.pt'))
-    #cwgan.critic.load_state_dict(torch.load('/home/lijunlin/Project/AIColor/save/dgan_256_256/PatchGAN_END.pt'))
-    trainer.fit(cwgan, train_loader, validate_loader)
-    torch.save(cwgan.generator.state_dict(), cwgan.save_path +"ResUnet_END.pt")
-    torch.save(cwgan.critic.state_dict(), cwgan.save_path  +"PatchGAN_END.pt")
-    
-device = 'cuda:0'
+device = 'cuda:2'
 if __name__ == '__main__':
     # file_path = r'E:\Data\Frame\test_frames\test'
     # save_path = r'E:\Data\Frame\test_frames\result_ADQAE/'

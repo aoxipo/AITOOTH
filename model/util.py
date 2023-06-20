@@ -1,6 +1,8 @@
 from torch import nn
 import torch
-
+import matplotlib
+matplotlib.use('AGG')
+import matplotlib.pyplot as plt
 
 import numpy as np
 import cv2
@@ -141,9 +143,53 @@ class MinPool(nn.Module):
         x = self.pool(-x)
         return -x
 
+@torch.no_grad()
+class OpenOpt(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.erode = MinPool(2, 2, 1)
+        self.dilate = nn.MaxPool2d(2, stride = 1)
+    def forward(self, x):
+        x = nn.functional.pad(x, (1, 0, 1, 0))
+        x = self.erode(x)
+        # x = nn.functional.pad(x, (1, 0, 1, 0))
+        # x = self.dilate(x) 
+        # assert False, x.shape
+        return x
+
 def _weights_init(m):
     if isinstance(m, (nn.Conv2d, nn.ConvTranspose2d)):
         nn.init.normal_(m.weight, 0.0, 0.02)
     if isinstance(m, nn.BatchNorm2d):
         nn.init.normal_(m.weight, 0.0, 0.02)
         nn.init.constant_(m.bias, 0)
+
+def crop_tensor(image_pack, scale_x, scale_y = None):
+    if scale_y is None:
+        scale_y = scale_x
+    _, _, w, h = image_pack.size()
+    a = int(w/scale_x)
+    b = int(h/scale_y)
+    print(a, b)
+    t = torch.split(image_pack, a, dim = 2)
+    ans = []
+    for i in t:
+        for j in torch.split(i, b, dim=3):
+            ans.append(j)
+            print(j.shape)
+    d = torch.stack(ans, 1)
+    return d
+
+def cat_tensor(image_pack, scale_x, scale_y = None):
+    if scale_y is None:
+        scale_y = scale_x
+    data = []
+    for i in range(scale_x):
+        m = []
+        for j in range(scale_y):
+            m.append(image_pack[:, i * scale_y + j ,:,:,:])
+            print(  i * scale_y + j, i,j )
+        data.append(torch.cat(m, dim = -1))
+    
+    data = torch.cat(data, dim = -2)
+    return data
