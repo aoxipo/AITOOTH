@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
-from RESUNet import MinPool
-
+from .RESUNet import MinPool
+from .model import Unet
 
 
 class FPN(nn.Module):
@@ -43,19 +43,19 @@ class FPN(nn.Module):
 
 from util import cat_tensor, crop_tensor
 
-class ResBlock(nn.Module):
+class ResBlock2D(nn.Module):
     def __init__(self, in_channels, out_channels, padding = 1):
         super().__init__()
         self.layer = nn.Sequential(
-            nn.Conv3d(in_channels, out_channels, kernel_size = (1,3,3), stride = (1,1,1) , padding = (0,1,1), bias=False),
-            nn.BatchNorm3d(out_channels),
+            nn.Conv2d(in_channels, out_channels, kernel_size = (3,3), stride = (1,1) , padding = (1,1), bias=False),
+            nn.BatchNorm2d(out_channels),
             nn.ReLU(inplace=True),
-            nn.Conv3d(out_channels, out_channels,kernel_size = (1,3,3), stride = (1,1,1), padding = (0,1,1), bias=False),
-            nn.BatchNorm3d(out_channels),
+            nn.Conv2d(out_channels, out_channels,kernel_size = (3,3), stride = (1,1), padding = (1,1), bias=False),
+            nn.BatchNorm2d(out_channels),
             nn.ReLU(inplace=True)
         )
 
-        self.identity_map = nn.Conv3d( in_channels, out_channels, kernel_size = (1,3,3), stride = (1,1,1), padding = (0,1,1))
+        self.identity_map = nn.Conv2d( in_channels, out_channels, kernel_size = (3,3), stride = (1,1), padding = (1,1))
         self.relu = nn.ReLU(inplace=True)
     def forward(self, inputs):
         x = inputs.clone().detach()
@@ -64,22 +64,22 @@ class ResBlock(nn.Module):
         skip = out + residual
         return self.relu(skip)
 
-class Hourglass(nn.Module):
+class Hourglass2D(nn.Module):
     def __init__(self, n, f, bn=None, increase=0):
-        super(Hourglass, self).__init__()
+        super(Hourglass2D, self).__init__()
         nf = f + increase
-        self.up1 = ResBlock(f, f)
+        self.up1 = ResBlock2D(f, f)
         # Lower branch
-        self.pool1 = nn.MaxPool3d((1,2,2))
-        self.low1 = ResBlock(f, nf)
+        self.pool1 = nn.MaxPool2d((2,2))
+        self.low1 = ResBlock2D(f, nf)
         self.n = n
-        # Recursive hourglass
+        # Recursive hourglass2d
         if self.n > 1:
-            self.low2 = Hourglass(n-1, nf, bn=bn)
+            self.low2 = Hourglass2D(n-1, nf, bn=bn)
         else:
-            self.low2 = ResBlock(nf, nf)
-        self.low3 = ResBlock(nf, f)
-        self.up2 = nn.Upsample(scale_factor = (1,2,2), mode='nearest')
+            self.low2 = ResBlock2D(nf, nf)
+        self.low3 = ResBlock2D(nf, f)
+        self.up2 = nn.Upsample(scale_factor = (2,2), mode='nearest')
 
     def forward(self, x):
         up1  = self.up1(x)
@@ -90,22 +90,22 @@ class Hourglass(nn.Module):
         up2  = self.up2(low3)
         return up1 + up2
 
-class DShotConnect(nn.Module):
+class DShotConnect2D(nn.Module):
     def __init__(self, in_channels, out_channels):
         super().__init__()
         self.conv_r = nn.Sequential(
-            nn.Conv3d( in_channels, out_channels, kernel_size = (1,3,3), stride = (1,1,1), padding = (0,1,1) ),
-            nn.BatchNorm3d(out_channels),
+            nn.Conv2d( in_channels, out_channels, kernel_size = (3,3), stride = (1,1), padding = (1,1) ),
+            nn.BatchNorm2d(out_channels),
             nn.ReLU(),
         )
         self.conv_l = nn.Sequential(
-            nn.Conv3d( in_channels, out_channels, kernel_size = (1,3,3), stride = (1,1,1), padding = (0,1,1) ),
-            nn.BatchNorm3d(out_channels),
+            nn.Conv2d( in_channels, out_channels, kernel_size = (3,3), stride = (1,1), padding = (1,1) ),
+            nn.BatchNorm2d(out_channels),
             nn.ReLU(),
         )
         self.conv = nn.Sequential(
-            nn.BatchNorm3d(2 * out_channels),
-            nn.Conv3d( 2 * out_channels, out_channels, kernel_size = (1,3,3), stride = (1,1,1), padding = (0,1,1) ),
+            nn.BatchNorm2d(2 * out_channels),
+            nn.Conv2d( 2 * out_channels, out_channels, kernel_size = (3,3), stride = (1,1), padding = (1,1) ),
             nn.ReLU(),
         )
   
@@ -117,7 +117,7 @@ class DShotConnect(nn.Module):
         return x
 
 
-class FL(nn.Module):
+class FL2D(nn.Module):
     def __init__(
                 self,
                 in_channel = 1,
@@ -125,16 +125,18 @@ class FL(nn.Module):
                 middle_channel = 32, 
                 embed_shape = ( 2, 4),
                 nstack = 2,
+                batch_size = 16,
                 need_return_dict = False
         ):
-        super(FL,self).__init__()
+        super(FL2D, self).__init__()
         self.nstack = nstack
+        self.batch_size = batch_size
         self.embed_shape = embed_shape
         self.need_return_dict = need_return_dict
         
         self.downsample = nn.Sequential(
             nn.AvgPool2d(2),
-            nn.Conv2d(in_channel, middle_channel, kernel_size = (3,3), stride = (1,1), padding = 1 )
+            nn.Conv2d(in_channel, middle_channel, kernel_size = (3,3), stride = (1,1), padding = 1)
         )
         
         self.upsample = nn.ConvTranspose2d(out_channel, out_channel, (2,2), (2,2))
@@ -143,26 +145,27 @@ class FL(nn.Module):
         
         self.hgs = nn.ModuleList( [
             nn.Sequential(
-                Hourglass(4, middle_channel, increase = 32)
+                Hourglass2D(4, middle_channel, increase = 32)
             ) for i in range(nstack)] 
         )
         
         self.features = nn.ModuleList( [
                 nn.Sequential(
-                    ResBlock(middle_channel, middle_channel),
-                    DShotConnect(middle_channel, middle_channel),
+                    ResBlock2D(middle_channel, middle_channel),
+                    DShotConnect2D(middle_channel, middle_channel),
                 ) for i in range(nstack)
         ])
         
         self.outs = nn.ModuleList( [
-            DShotConnect(middle_channel, middle_channel)  for i in range(nstack)
+            DShotConnect2D(middle_channel, middle_channel)  for i in range(nstack)
         ])
         
         self.merge_features = nn.ModuleList( [
-                DShotConnect(middle_channel, middle_channel)  for i in range(nstack - 1)
+                DShotConnect2D(middle_channel, middle_channel)  for i in range(nstack - 1)
         ] )
-        self.merge_preds = nn.ModuleList( [ DShotConnect(middle_channel, middle_channel) for i in range(nstack - 1)] )
-        self.final = nn.Conv3d( nstack * middle_channel, out_channel, kernel_size = (1,3,3), stride = (1,1,1), padding = (0,1,1) )
+        self.merge_preds = nn.ModuleList( [ DShotConnect2D(middle_channel, middle_channel) for i in range(nstack - 1)] )
+        self.final = nn.ModuleList( [ nn.Conv2d(nstack * middle_channel, out_channel, kernel_size = (3,3), stride = (1,1), padding = (1,1) ) for i in range(self.batch_size)] )
+        # self.final = nn.Conv2d(nstack * middle_channel, out_channel, kernel_size = (3,3), stride = (1,1), padding = (1,1) )
         self.relu = nn.ReLU()
         self.sigmod = nn.Sigmoid()
         
@@ -170,11 +173,11 @@ class FL(nn.Module):
     
     def get_embeding(self, x):
         embed_x = crop_tensor(x, self.embed_shape[0], self.embed_shape[1])
-        embed_x = embed_x.permute(0, 2, 1, 3, 4)
+        # embed_x = embed_x.permute(0, 2, 1, 3, 4)
         return embed_x
     
     def re_build(self, x):
-        x = x.permute(0, 2, 1, 3, 4)
+        # x = x.permute(0, 2, 1, 3, 4)
         x = cat_tensor(x, self.embed_shape[0], self.embed_shape[1])        
         return x
 
@@ -185,25 +188,117 @@ class FL(nn.Module):
         }
     def forward(self, x):   
         x = self.downsample(x)
-        x_embed = self.get_embeding(x)
-        combined_hm_preds = []
-        for i in range(self.nstack):
-            hg = self.hgs[i](x_embed)
-            # print("hg:",hg.size()) 
-            feature = self.features[i](hg)
-            # print("feature:",feature.size())
-            preds = self.outs[i](feature)
-            keys = self.sigmod(preds)
-            # print("preds:", preds.size())
-            combined_hm_preds.append( self.relu((preds * hg + feature * hg ) * keys ) )
-            if i < self.nstack - 1:
-                x_embed = x_embed + self.merge_preds[i](preds) + self.merge_features[i](feature)
+        B,C,W,H =  x.shape
+        x_embed = self.get_embeding(x) 
+        batch_item_combined_hm_preds = []
         
-        x_combine = torch.cat(combined_hm_preds, dim = 1)
-        x_embed = self.final(x_combine)
-        outp = self.re_build( x_embed )
+        for batch_index in range(B): 
+            batch_item_x_embed = x_embed[batch_index,:,:,:,:]
+            combined_hm_preds = []
+            # print("batch_item_x_embed:", batch_item_x_embed.shape)
+            
+            for i in range(self.nstack):
+                hg = self.hgs[i](batch_item_x_embed)
+                # print("hg:",hg.size()) 
+                feature = self.features[i](hg)
+                # print("feature:",feature.size())
+                preds = self.outs[i](feature)
+                keys = self.sigmod(preds)
+                # print("preds:", preds.size())
+                combined_hm_preds.append( self.relu((preds * hg + feature * hg ) * keys ) )
+                if i < self.nstack - 1:
+                    x_embed = x_embed + self.merge_preds[i](preds) + self.merge_features[i](feature)
+            
+            x_combine = torch.cat(combined_hm_preds, dim = 1)
+            x_combine =self.final[batch_index](x_combine)
+            # print("x_combine:", x_combine.shape)
+            batch_item_combined_hm_preds.append(x_combine)
+            
+        x_combine = torch.stack( batch_item_combined_hm_preds, 0)
+        # print("total:x_combin:", x_combine.shape)
+        outp = self.re_build( x_combine )
         outp = self.upsample(outp)
         edge = nn.functional.pad(outp, (1, 0, 1, 0))
         edge = self.dilate(edge) - self.erode(edge)
         return self.build_results(outp, edge) if (self.need_return_dict) else (outp, edge)
 
+
+
+
+class FL_base(nn.Module):
+    def __init__(
+                self,
+                in_channel = 1,
+                out_channel = 1,
+                middle_channel = 1,
+                embed_shape = ( 2, 4),
+                batch_size = 16,
+                need_return_dict = False
+        ):
+        super(FL_base, self).__init__()
+     
+        self.batch_size = batch_size
+        self.embed_shape = embed_shape
+        self.need_return_dict = need_return_dict
+        
+        self.downsample = nn.Sequential(
+            nn.AvgPool2d(2),
+            nn.Conv2d(in_channel, middle_channel, kernel_size = (3,3), stride = (1,1), padding = 1)
+        )
+        self.upsample = nn.ConvTranspose2d(out_channel, out_channel, (2,2), (2,2))
+        self.erode = MinPool(2,2,1)
+        self.dilate = nn.MaxPool2d(2, stride = 1)
+        
+        # replace your model
+        ####################################
+        self.model = Unet(False)
+        ####################################
+        
+        self.final = nn.Conv2d(middle_channel, out_channel, kernel_size = (3,3), stride = (1,1), padding = (1,1) )
+        self.middle_channel = 1
+        self.relu = nn.ReLU()
+        self.sigmod = nn.Sigmoid()
+        
+        
+    
+    def get_embeding(self, x):
+        embed_x = crop_tensor(x, self.embed_shape[0], self.embed_shape[1])
+        # embed_x = embed_x.permute(0, 2, 1, 3, 4)
+        return embed_x
+    
+    def re_build(self, x):
+        # x = x.permute(0, 2, 1, 3, 4)
+        x = cat_tensor(x, self.embed_shape[0], self.embed_shape[1])        
+        return x
+
+    def build_results(self,x,y):
+        return {
+            "mask":x,
+            'edge':y,
+        }
+    def forward(self, x):   
+        x = self.downsample(x)
+        B,C,W,H =  x.shape
+        x_embed = self.get_embeding(x) 
+        batch_item_combined_hm_preds = []
+        
+        for batch_index in range(B): 
+
+            batch_item_x_embed = x_embed[batch_index,:,:,:,:]
+            # print(batch_item_x_embed.shape)
+            
+            #### your forward model here
+            output, _ = self.model( batch_item_x_embed ) # only for mask not edge, edge will have another way
+            #### 
+            
+            if self.middle_channel != 1:
+                output = self.final[batch_index](output)
+            batch_item_combined_hm_preds.append(output)
+            
+        x_combine = torch.stack( batch_item_combined_hm_preds, 0)
+        # print("total:x_combin:", x_combine.shape)
+        outp = self.re_build( x_combine )
+        outp = self.upsample(outp)
+        edge = nn.functional.pad(outp, (1, 0, 1, 0))
+        edge = self.dilate(edge) - self.erode(edge)
+        return self.build_results(outp, edge) if (self.need_return_dict) else (outp, edge)

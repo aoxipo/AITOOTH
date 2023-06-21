@@ -170,13 +170,13 @@ def crop_tensor(image_pack, scale_x, scale_y = None):
     _, _, w, h = image_pack.size()
     a = int(w/scale_x)
     b = int(h/scale_y)
-    print(a, b)
+    # print(a, b)
     t = torch.split(image_pack, a, dim = 2)
     ans = []
     for i in t:
         for j in torch.split(i, b, dim=3):
             ans.append(j)
-            print(j.shape)
+            # print(j.shape)
     d = torch.stack(ans, 1)
     return d
 
@@ -188,7 +188,7 @@ def cat_tensor(image_pack, scale_x, scale_y = None):
         m = []
         for j in range(scale_y):
             m.append(image_pack[:, i * scale_y + j ,:,:,:])
-            print(  i * scale_y + j, i,j )
+            # print(  i * scale_y + j, i,j )
         data.append(torch.cat(m, dim = -1))
     
     data = torch.cat(data, dim = -2)
