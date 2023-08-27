@@ -81,6 +81,6 @@ jupyter notebook
 
 # Results
 
-![image-20230827104530206](.\assert\result.png)
+![result.png](.\assert\result.png)
 
 Here is our result in tianchi rank board result and we got 129/839 rank,  Diffusion and Prompt is the future.
