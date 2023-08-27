@@ -1,6 +1,7 @@
 from .fid import FID
 from .cdc import CDC
 import numpy as np
+from .adploss import HausdorffDTLoss
 
 class Cal_Score():
     def __init__(self, batch_size) -> None:
@@ -30,28 +31,28 @@ class Cal_Score():
         self.cdc_score_list = []
         return fid_avg, cdc_avg
 import torch
+hd_loss = HausdorffDTLoss()
 def cal_dice(mask, gt):
-
-
-
-    union = mask * gt
-    dice = 2* torch.sum(union, [1,2,3])/(torch.sum(mask, [1,2,3])+torch.sum(gt, [1,2,3]))
-    return torch.mean(dice)
+    smooth = 1.
+    num = mask.size(0)
+    m1 = mask.view(num, -1)  # Flatten
+    m2 = gt.view(num, -1)  # Flatten
+    intersection = (m1 * m2).sum()
+    return (2. * intersection + smooth) / (m1.sum() + m2.sum() + smooth)
 
 def cal_iou(mask, gt):
-    union = mask * gt
-    incorporate = (mask + gt) /2
-    return torch.mean(torch.mean(union/incorporate, [1,2,3]))
-
+    return  torch.mean(torch.sum(mask == gt, [1,2,3])/(320*640) )
+    
 def cal_Hausdorff(mask, gt):
-    return torch.mean(torch.sum(torch.abs(mask - gt), [1,2,3]))
+    global hd_loss
+    return hd_loss(mask, gt)
 
 def cal_all_score(mask, gt):
+    mask = mask.clone()
     mask[mask<0.5] = 0
-    mask[mask>0.5] = 1
-    
+    mask[mask>=0.5] = 1
     dice = cal_dice(mask, gt)
     iou = cal_iou(mask, gt)
     hausdorff = cal_Hausdorff(mask, gt)
-    score = 0.4 * dice + 0.3 * iou + 0.3 * hausdorff
+    score = 0.4 * dice + 0.3 * iou + 0.3 * (1 - hausdorff)
     return [score, dice, iou, hausdorff]

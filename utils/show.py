@@ -10,13 +10,15 @@ def display_progress(cond, real, fake, edge = None, current_epoch = 0, figsize=(
     Save cond, real (original) and generated (fake)
     images in one panel 
     """
-    score = cal_all_score(real, fake)
+    score = cal_all_score(real.unsqueeze(0), fake.unsqueeze(0))
     cond = cond.detach().cpu().permute(1, 2, 0).numpy()   
     real = real.detach().cpu().permute(1, 2, 0).numpy()
     fake = fake.detach().cpu().permute(1, 2, 0).numpy()
     images = [cond, real, fake]
     titles = ['input','real','generated']
-
+    
+    avg_score = np.round(score[0].cpu().numpy(), 4)
+    
     if edge is not None:
         edge = edge.detach().cpu().permute(1, 2, 0).numpy()
         images.append(edge)
@@ -37,7 +39,7 @@ def display_progress(cond, real, fake, edge = None, current_epoch = 0, figsize=(
             ax[idx].set_title('{}'.format(title))
         if save:
             f = plt.gcf()  #获取当前图像
-            f.savefig(save_path + '/{}_{}.png'.format(current_epoch, score[0].cpu().numpy()))
+            f.savefig(save_path + '/{}_{}.png'.format(current_epoch, avg_score))
             f.clear()  #释放
         else:
             plt.show()
@@ -56,7 +58,7 @@ def display_progress(cond, real, fake, edge = None, current_epoch = 0, figsize=(
             ax[idx].set_title('{}'.format(title))
         if save:
             f = plt.gcf()  #获取当前图像
-            f.savefig(save_path + '/{}_{}.png'.format(current_epoch, score[0].cpu().numpy()))
+            f.savefig(save_path + '/{}_{}.png'.format(current_epoch, avg_score))
             f.clear()  #释放
         else:
             plt.show()
