@@ -81,6 +81,6 @@ jupyter notebook
 
 # Results
 
-![result.png](./assert/result.png)
+![./assert/result.png](https://github.com/aoxipo/AITOOTH/blob/main/assert/result.png)
 
 Here is our result in tianchi rank board result and we got 129/839 rank,  Diffusion and Prompt is the future.
