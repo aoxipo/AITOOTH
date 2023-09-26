@@ -1,11 +1,11 @@
 # AITOOTH
 AITOOTH is our code for MICCAI 2023 Challenges ：STS-基于2D 全景图像的牙齿分割任务
 
-Our paper will coming soon
-
 # Model
 
 We propose the RFM (Residual fusion module) module as the fundamental unit for the encoding and decoding process.  We find that the SK model has outstanding performance in feature layer fusion with convolution and group pre-processing.  Therefore, the SK structure is used to fuse the feature layers extracted by convolution and transformer.
+
+In order to better converge the boundary, we propose a boundary learning module, which predicts the image boundary conditions after the feature layer is encoded, and then splices the predicted boundary results with the predicted mask on the channel dimension to fit the final boundary and mask results through a low-cost network
 
 ### alg core
 
@@ -81,6 +81,10 @@ jupyter notebook
 
 # Results
 
-![./assert/result.png](https://github.com/aoxipo/AITOOTH/blob/main/assert/result.png)
+![./assert/result.png](./assert/result.png)
 
 Here is our result in tianchi rank board result and we got 129/839 rank,  Diffusion and Prompt is the future.
+
+###### GTUPvtMlp Result
+
+![100_-3.5179](./assert/100_3.5179.png)
