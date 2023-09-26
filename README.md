@@ -10,6 +10,7 @@ In order to better converge the boundary, we propose a boundary learning module,
 ### alg core
 
 First, use the group transformer to extract features, then use three-layer convolution to extract features, and then use the sk model to fuse the two features.
+Second, in torch, we implement image processing with concave optimization and non-concave optimization for more convenient mask boundary graph generation.
 
 # Train
 
