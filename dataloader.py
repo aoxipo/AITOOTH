@@ -12,7 +12,7 @@ from PIL import Image
 import cv2
 import matplotlib.pyplot as plt
 from utils.score import cal_all_score
-
+from model_server.util import get_level_set
 from torch.utils.data import Subset
 
 class CustomSubset(Subset):
@@ -254,17 +254,22 @@ class Dataload(Dataset):
                 if self.datagen_gt is not None:
                     
                     image_mask = self.datagan_read(image_mask)
+                    level_set = get_level_set(image_mask)
+
                     torch.random.manual_seed(seed)
                     image_mask = self.datagan_random(image_mask)
                     image_mask = self.datagan_normal(image_mask)
+
+                    torch.random.manual_seed(seed)
+                    level_set = self.datagan_random(level_set)
+                    level_set = self.datagan_normal(level_set)
 
                     image_edge_mask = self.datagan_read(image_edge_mask)
                     torch.random.manual_seed(seed)
                     image_edge_mask = self.datagan_random(image_edge_mask)
                     image_edge_mask = self.datagan_normal(image_edge_mask)
                             
-
-            return image_src, [image_mask, image_edge_mask] #
+            return image_src, [ image_mask, image_edge_mask, level_set] #
         except Exception as e:
             print("发现异常")
             print(e.__class__.__name__)

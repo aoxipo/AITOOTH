@@ -1064,7 +1064,7 @@ class GT_U_DC_PVTNet(nn.Module):
             self.up_list.append( 
                 up_conv(ch_in = middle_channel[now_dim ] , ch_out = 2 * middle_channel[next_dim]) 
             )
-            
+          
             if i < self.index_len :
                 # print(pvt_channel[ 4 - i - 1 ], middle_channel[now_dim ])
                 self.sk_list.append( 
@@ -1132,13 +1132,13 @@ class GT_U_DC_PVTNet(nn.Module):
         if super_vision is None:
             return {
             "mask": x,
-            "cmask": y,
+            "levelset": y,
             "edge":z,
         }
         else:
             return {
                 "mask": x,
-                "cmask": y,
+                "levelset": y,
                 "edge":z,
                 "super":super_vision
             }

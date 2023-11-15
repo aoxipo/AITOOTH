@@ -3,9 +3,10 @@ import torch
 import matplotlib
 matplotlib.use('AGG')
 import matplotlib.pyplot as plt
-
+from scipy.ndimage.morphology import distance_transform_cdt
 import numpy as np
 import cv2
+import copy
 Pool = nn.MaxPool2d
 
 def batchnorm(x):
@@ -193,3 +194,33 @@ def cat_tensor(image_pack, scale_x, scale_y = None):
     
     data = torch.cat(data, dim = -2)
     return data
+
+ERODE = MinPool(3,2,1).cuda()
+DILATE = nn.MaxPool2d(3, stride = 1).cuda()
+
+def Dilate(x, kernel = DILATE, number_iter = 4):
+    for i in range(number_iter):
+        x = nn.functional.pad(x, (1, 1, 1, 1))
+        x = kernel(x)
+    return x
+
+def get_dis_map(x, kernel = ERODE):
+    dis_map = torch.zeros_like(x)
+    while torch.sum(x):
+        dis_map += x
+        x = nn.functional.pad(x, (1, 1, 1, 1))
+        x = kernel(x)
+    return dis_map
+
+# plan ours
+def get_level_set( x ):
+    x = Dilate(x)
+    return get_dis_map(x)
+
+# plan 1
+def get_2D_over_mask(x, dilate_num = 1, iter_num = 3, kernel = np.ones((3, 3), np.uint8)):
+    img_dilate = x
+    for i in range(iter_num):
+        img_dilate = cv2.dilate(img_dilate, kernel, iterations = dilate_num)
+    depth_i = distance_transform_cdt(img_dilate, metric='taxicab')
+    return depth_i

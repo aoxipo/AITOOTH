@@ -467,8 +467,6 @@ class Train():
         self.model.load_state_dict(torch.load(file_path, map_location = device))
 
 
-
-
 device = "cuda:3"
 if __name__ == "__main__":
     batch_size = 12
