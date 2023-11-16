@@ -18,7 +18,7 @@ from utils.score_numpy import mean_iou_np, mean_dice_np, positive_recall, negati
 
 from utils.office_score import evaluateof2d
 from utils.show import display_progress
-from model.util import crop_tensor, cat_tensor
+from model_server.util import crop_tensor, cat_tensor
 from utils.utils import normalized
 
 use_gpu = torch.cuda.is_available()
@@ -61,21 +61,21 @@ class Train():
         if self.device is not None:
             device = self.device
         if (self.method_type == 0):
-            from model.model import Unet as Model
+            from model_server.model import Unet as Model
             self.model = Model()
             print("build Unet model")
             
         elif self.method_type == 1:
-            from model.RESUNet import RESUNet as Model
+            from model_server.RESUNet import RESUNet as Model
             self.model = Model()
             print("build RESUNet model")
         elif self.method_type == 2:
-            from model.model import RUnet as Model
+            from model_server.model import RUnet as Model
             self.model = Model()
             print("build RU model")
 
         elif self.method_type == 3:
-            from model.FL_DETR import FPN as Model
+            from model_server.FL_DETR import FPN as Model
             self.model = Model(
                     middle_channel = [32, 64, 128, 256],
                     need_return_dict = True
@@ -83,7 +83,7 @@ class Train():
             print("build FPN model")
         
         elif self.method_type == 4:
-            from model.GTU.models.GT_UNet import GT_U_DCNet as Model
+            from model_server.GTU.models.GT_UNet import GT_U_DCNet as Model
             self.model = Model(
                    1, 1, 
                    middle_channel = [64, 128, 256, 512, 768, 1024],
@@ -95,7 +95,7 @@ class Train():
             print(f"build {self.model.__class__.__name__} model")
         
         elif self.method_type == 42:
-            from model.GTU.models.GT_UNet import GT_U_DC_PVTNet as Model
+            from model_server.GTU.models.GT_UNet import GT_U_DC_PVTNet as Model
             self.model = Model(
                    1, 1, 
                    need_return_dict = True,
@@ -104,7 +104,7 @@ class Train():
                 )
             print(f"build {self.model.__class__.__name__} model")
         elif self.method_type == 43:
-            from model.GTU.models.GT_UNet import GT_U_DC_PVTNet as Model
+            from model_server.GTU.models.GT_UNet import GT_U_DC_PVTNet as Model
             self.model = Model(
                    1, 1, 
                    need_return_dict = True,
@@ -114,18 +114,18 @@ class Train():
             print(f"build {self.model.__class__.__name__} model")
 
         elif self.method_type == 41:
-            from model.FL_GTU import FL_GTU as Model
+            from model_server.FL_GTU import FL_GTU as Model
             self.model = Model(
                    1, 1, need_return_dict = True
                 )
             print("build FPN_GTU model")
 
         elif self.method_type == 5:
-            from model.FL3D import FL3D as Model
+            from model_server.FL3D import FL3D as Model
             self.model = Model(1, 1)
             print("build Focus on local")
         elif self.method_type == 6:
-            from model.FPN import FL2D as Model
+            from model_server.FPN import FL2D as Model
             self.model = Model( 
                 in_channel = 1,
                 out_channel = 1,
@@ -137,7 +137,7 @@ class Train():
             )
             print("build FL 2D local")
         elif self.method_type == 7:
-            from model.FL_base import FL_base as Model
+            from model_server.FL_base import FL_base as Model
             self.model = Model( 
                 in_channel = 1,
                 out_channel = 1,
@@ -148,7 +148,7 @@ class Train():
             )
             print("build FL_base local")
         elif self.method_type == 8:
-            from model.FL_seris import FL_tiny as Model
+            from model_server.FL_seris import FL_tiny as Model
             self.model = Model( 
                 in_channel = 1,
                 out_channel = 1,
@@ -159,7 +159,7 @@ class Train():
             )
             print("build FL_tiny local")
         elif self.method_type == 9:
-            from model.FPN import FL_FPN as Model
+            from model_server.FPN import FL_FPN as Model
             self.model = Model( 
                 in_channel = 1,
                 out_channel = 1,
@@ -170,7 +170,7 @@ class Train():
             )
             print("build FL_FPN local")
         elif self.method_type == 911:
-            from model.FPN_BEST import FL_FPN as Model
+            from model_server.FPN_BEST import FL_FPN as Model
             self.model = Model( 
                 in_channel = 1,
                 out_channel = 1,
@@ -181,7 +181,7 @@ class Train():
             )
             print("build FL_FPN local")
         elif self.method_type == 91:
-            from model.FPN import FL_FPN as Model
+            from model_server.FPN import FL_FPN as Model
             self.model = Model( 
                 in_channel = 1,
                 out_channel = 1,
@@ -192,7 +192,7 @@ class Train():
             )
             print("build FL_FPN 3, 6 local")
         elif self.method_type == 92:
-            from model.FL_DETR import FL_DETR as Model
+            from model_server.FL_DETR import FL_DETR as Model
             self.model = Model( 
                 in_channel = 1,
                 out_channel = 1,
