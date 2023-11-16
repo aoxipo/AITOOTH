@@ -28,3 +28,5 @@ def get_encoding(file_path):
         data = f.read()
         return chardet.detect(data)['encoding']
     
+def normalized(x):
+    return (x - x.min())/(x.max()-x.min())

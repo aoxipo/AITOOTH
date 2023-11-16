@@ -198,23 +198,30 @@ def cat_tensor(image_pack, scale_x, scale_y = None):
 ERODE = MinPool(3,2,1).cuda()
 DILATE = nn.MaxPool2d(3, stride = 1).cuda()
 
-def Dilate(x, kernel = DILATE, number_iter = 4):
+def Dilate(x, kernel = DILATE, number_iter = 2):
     for i in range(number_iter):
         x = nn.functional.pad(x, (1, 1, 1, 1))
         x = kernel(x)
     return x
 
 def get_dis_map(x, kernel = ERODE):
+    assert x.max() <= 1 and x.min()>= 0, "tensor must in arrange 0 - 1"
     dis_map = torch.zeros_like(x)
-    while torch.sum(x):
+    old_x = -1
+    while old_x:
         dis_map += x
         x = nn.functional.pad(x, (1, 1, 1, 1))
         x = kernel(x)
+        now_x = torch.sum(x)
+        if old_x == now_x:
+            return old_x, x
+        old_x = now_x
+        
     return dis_map
 
 # plan ours
 def get_level_set( x ):
-    x = Dilate(x)
+    # x = Dilate(x)
     return get_dis_map(x)
 
 # plan 1

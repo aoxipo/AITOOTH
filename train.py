@@ -13,11 +13,13 @@ import matplotlib.pyplot as plt
 
 from utils.adploss import AdpLoss, diceCoeffv2, Cal_HausdorffDTLoss
 from utils.score import cal_all_score
-
+from model_server.datawarper import DataWarper
 from utils.score_numpy import mean_iou_np, mean_dice_np, positive_recall, negative_recall
 
+from utils.office_score import evaluateof2d
 from utils.show import display_progress
 from model.util import crop_tensor, cat_tensor
+from utils.utils import normalized
 
 use_gpu = torch.cuda.is_available()
 torch.cuda.manual_seed(3407)
@@ -54,6 +56,7 @@ class Train():
         self.create(is_show)
 
     def create(self, is_show):
+        self.data_warper = DataWarper()
         batch_size = self.batch_size
         if self.device is not None:
             device = self.device
@@ -228,11 +231,16 @@ class Train():
             raise NotImplementedError
         
         self.cost = torch.nn.MSELoss()
+        self.encropy_cost = torch.nn.CrossEntropyLoss()
+        self.l1 = torch.nn.L1Loss()
         self.downsample = torch.nn.MaxPool2d(2)
         if (use_gpu):
             self.model = self.model.to(device)
             self.cost = self.cost.to(device)
+            self.encropy_cost = self.encropy_cost.to(device)
+            self.l1 = self.l1.to(device)
             self.downsample = self.downsample.to(device)
+            self.data_warper = self.data_warper.to(device)
             
         if (is_show):
             summary(self.model, (self.in_channels, self.image_size * 2, self.image_size))
@@ -299,8 +307,9 @@ class Train():
         test_index = 0
         iou = []
         dice = []
-        pr = []
+        hd = []
         nr = []
+        pr = []
         with torch.no_grad():
             for data in data_loader_test:
                 X_test, y_test = data
@@ -318,32 +327,38 @@ class Train():
                     y_gt = crop_tensor(y_gt, w, 2*w, axis = 0)
                     y_edge = crop_tensor(y_edge, w, 2*w, axis = 0)
                 # print(X_test.shape)
-               
+
+                X_test, level_set = self.data_warper(X_test, y_gt)
                 outputs = self.model(X_test)
 
                 loss1 = self.cost(outputs["mask"], y_gt)
                 loss_dice_1 = diceCoeffv2( outputs["mask"], y_gt )
-                # loss2 = self.cost(outputs["edge"], y_edge)
-                loss = 0.4 * loss_dice_1 + 0.3 * loss1
+                #loss_level_set = self.l1(outputs["levelset"], level_set)
+                #loss2 = self.cost(outputs["edge"], y_edge)
+
+                loss = 0.4 * loss_dice_1 + 0.3 * loss1 # + 0.2 * loss2 + loss_level_set 
 
                 running_loss += loss.data.item()
                 test_index += 1
                 if need_score:
-                    gt = y_gt.cpu().numpy()
-                    mask = outputs["mask"].detach().cpu().numpy()
-                    gt = np.asarray(gt, np.float32)
-                    gt /= (gt.max() + 1e-8)
+                    gt = y_gt.cpu()
+                    mask = outputs["mask"].detach().cpu()
 
-                    mask = np.asarray(mask, np.float32)
-                    mask /= (mask.max() + 1e-8)
-                    iou.append(mean_iou_np(gt, mask))
-                    dice.append(mean_dice_np(gt, mask))
-                    pr.append(positive_recall(gt, mask))
+                    for i in range(len(mask)):
+                        pred = np.array(normalized( mask[i].squeeze().numpy()) * 255, dtype=np.uint8)
+                        label = np.array(normalized( gt[i].squeeze().numpy()) * 255, dtype=np.uint8)
+                        score_dice, score_iou, score_hd = evaluateof2d(pred, label)
+                        iou.append(score_iou)
+                        dice.append(score_dice)
+                        hd.append(score_hd)
+
                     nr.append(negative_recall(gt, mask))
+                    pr.append(positive_recall(gt, mask))
         # mean_iou_np(), mean_dice_np(), positive_recall(), negative_recall()
         if need_score:
-            log_str = "IOU:{:.4f}, DICE:{:.4f}, PR:{:.4f},NR:{:.4f}".format(
-                np.mean( iou ), np.mean( dice ), np.mean( pr ),np.mean( nr ),  
+            score = 0.4* np.mean( dice ) + 0.3* np.mean( iou ) + 0.3* np.mean( hd )
+            log_str = "SCORE:{:.4f}, DICE:{:.4f}, IOU:{:.4f}, HD:{:.4f}, NR:{:.4f}, PR:{:.4f}\n".format(
+               score, np.mean( dice ), np.mean( iou ),np.mean( hd ),  np.mean(nr), np.mean(pr)
             )
             self.history_score.append(log_str)
             print( log_str )
@@ -373,21 +388,13 @@ class Train():
                 y_edge = crop_tensor(y_edge, w, 2*w, axis = 0)
             # print("训练中 train {}".format(X_train.shape))
             self.optimizer.zero_grad()
-            
+            X_train, level_set = self.data_warper(X_train, y_gt)
             outputs = self.model(X_train)
             loss1 = self.cost(outputs["mask"], y_gt)
-            # loss2 = self.cost(outputs["edge"], y_edge)
-            # loss3 = self.cost(outputs["cmask"], y_gt)
-            # supervision = outputs["super"]
-          
+            loss2 = self.l1(outputs["levelset"], level_set)
             loss_dice_1 = diceCoeffv2( outputs["mask"], y_gt )
-            # loss_dice_2 = diceCoeffv2( outputs["edge"], y_edge )
-            # loss_dice_3 = diceCoeffv2( outputs["cmask"], y_gt )
+            loss_cross = self.encropy_cost(outputs["mask"], y_gt)
            
-            # loss_hd_1 = Cal_HausdorffDTLoss( outputs["mask"], y_gt )
-            # loss_hd_2 = Cal_HausdorffDTLoss( outputs["edge"], y_edge )
-            # loss_hd_3 = Cal_HausdorffDTLoss( outputs["cmask"], y_gt )
-            # loss = self.adp(loss_main = 0.5 * loss1 + 0.5 * loss3,  loss_other = loss2)
             # loss_hd =  0.5 * loss_hd_1 + 0.5 * loss_hd_3
             # loss_dice = loss_dice_1 + 0.3 * loss1
             # loss_iou = 0.5 * loss1 # + 0.5 * loss3 
@@ -396,9 +403,9 @@ class Train():
             #     loss_dice += 0.1 * loss_dice_2
                 # loss_hd += 0.1 * loss_hd_2
 
-            loss = loss1 + loss_dice_1 #+ torch.abs(loss_dice_1) # loss_iou + loss_dice #  + loss_hd * 0.3
-            if loss_dice_1.item() < 0:
-                print("error!")
+            loss = 0.5 * loss1 + 0.5 * loss2 + 0.3 * loss_dice_1 + 0.5 * loss_cross 
+            if loss1 < 0.1:
+                loss += 0.1 * self.cost(outputs["edge"], y_edge) + self.encropy_cost(outputs["edge"], y_edge)
             # super_gt = y_gt
             # for index in range(len(supervision) - 1):
             #     super_gt = self.downsample(super_gt)
@@ -427,6 +434,7 @@ class Train():
             if (use_gpu):
                 image = image.to(device)
             # print(image.shape)
+            image = self.data_warper.clahe(image)
             output = self.model(image)
         return output
         # return output
@@ -467,7 +475,7 @@ class Train():
         self.model.load_state_dict(torch.load(file_path, map_location = device))
 
 
-device = "cuda:3"
+device = "cuda:0"
 if __name__ == "__main__":
     batch_size = 12
     image_size = 320
