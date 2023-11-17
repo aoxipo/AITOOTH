@@ -474,6 +474,7 @@ class Train():
         print(f"load:{file_path}")
         self.model.load_state_dict(torch.load(file_path, map_location = device))
 
+import shutil
 
 device = "cuda:0"
 if __name__ == "__main__":
@@ -534,5 +535,7 @@ if __name__ == "__main__":
     # trainer.load_parameter( "./save_best/GTU_pvt/best.pkl" )
 
     trainer.train_and_test(100, train_loader, validate_loader)
+
+    shutil.copy('./log.txt', f'./save/{trainer.name}/')
 
 
