@@ -405,7 +405,7 @@ class Train():
 
             loss = 0.5 * loss1 + 0.5 * loss2 + 0.3 * loss_dice_1 + 0.5 * loss_cross 
             if loss1 < 0.1:
-                loss += 0.1 * self.cost(outputs["edge"], y_edge) + self.encropy_cost(outputs["edge"], y_edge)
+                loss += 0.1 * self.cost(outputs["edge"], y_edge) + 0.1 * self.encropy_cost(outputs["edge"], y_edge)
             # super_gt = y_gt
             # for index in range(len(supervision) - 1):
             #     super_gt = self.downsample(super_gt)

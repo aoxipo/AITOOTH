@@ -1006,7 +1006,7 @@ class GT_U_DC_PVTNet(nn.Module):
                 need_return_dict = True,
                 need_supervision = False,
                 decode_type = "conv",
-                path = '../model/GTU/models/pretrained_pth/pvt_v2_b2.pth'
+                path = './model_server/GTU/models/pretrained_pth/pvt_v2_b2.pth'
 
         ):
         super(GT_U_DC_PVTNet, self).__init__()
