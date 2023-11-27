@@ -91,7 +91,9 @@ def get_dis_map(x, kernel = ERODE):
             return old_x, x
         old_x = now_x
     
-    
+    B,_,_,_ = dis_map.shape    
+    for ind in range(B):
+        dis_map[ind] = dis_map[ind]/dis_map[ind].max()
 
     return dis_map
 
