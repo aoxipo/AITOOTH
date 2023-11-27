@@ -1,8 +1,28 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from model.util import MinPool
-from .RESUNet import ResBlock
+from .util import MinPool
+
+class ResBlock(nn.Module):
+    def __init__(self, in_channels, out_channels, stride=1):
+        super().__init__()
+        self.layer = nn.Sequential(
+            nn.Conv2d(in_channels,out_channels,kernel_size = 3, padding = 1, stride=stride, bias = False),
+            nn.BatchNorm2d(out_channels),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(out_channels, out_channels,kernel_size = 3,padding = 1, stride = 1, bias = False),
+            nn.BatchNorm2d(out_channels),
+            nn.ReLU(inplace=True)
+        )
+
+        self.identity_map = nn.Conv2d(in_channels, out_channels,kernel_size = 1,stride = stride)
+        self.relu = nn.ReLU(inplace=True)
+    def forward(self, inputs):
+        x = inputs.clone().detach()
+        out = self.layer(x)
+        residual  = self.identity_map(inputs)
+        skip = out + residual
+        return self.relu(skip)
 
 class RCS(nn.Module):
     def __init__(self, in_channels, out_channels, kernel_size = 3, strides = 1, padding = 1, block_number = 2) -> None:

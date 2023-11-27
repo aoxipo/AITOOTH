@@ -32,7 +32,7 @@ class CustomSubset(Subset):
         return len(self.indices)
 
 class Dataload(Dataset):
-    def __init__(self, dir_path, image_shape=(224, 224), data_type='train', need_gray = True, data_aug = 10):
+    def __init__(self, dir_path, image_shape=(224, 224), data_type='train', need_gray = True, data_aug = 1):
         self.total_number = None
         file_path = dir_path + '/image/'
         gt_path = dir_path + '/mask/'
@@ -79,9 +79,14 @@ class Dataload(Dataset):
             #raise RuntimeError('image can \'t read:' + file_path)
         return image
 
-    def set_gan(self, set_none = None, method_list = None ):
+    def set_gan(self, set_none = None, method_list = None , need_origin = False):
         # cifar_norm_mean = (0.5)
         # cifar_norm_std = (0.5)
+        if need_origin:
+            self.datagen = False
+            self.datagen_gt = False
+            self.datagen_val = False
+            return 
         if set_none is None:
             self.datagen = None
             self.datagen_gt = None
@@ -95,10 +100,10 @@ class Dataload(Dataset):
                     transforms.GaussianBlur(7),
                 ])
                 self.datagan_random = transforms.Compose([
-                    transforms.RandomCrop(size = self.image_shape, padding=(10, 20)),
+                    transforms.RandomCrop(size = self.image_shape, padding=(30, 60)),
                     transforms.RandomHorizontalFlip(p=0.5),
                     transforms.RandomVerticalFlip(p=0.5),
-                    transforms.RandomRotation(10),
+                    # transforms.RandomRotation(10), # 10
                 ])
                 self.datagan_normal = transforms.Compose([
                     transforms.ToTensor(),      
@@ -114,6 +119,7 @@ class Dataload(Dataset):
         self.datagen = True
         self.datagen_gt = True
         self.datagen_val = transforms.Compose(method_list)
+
      
     def load_mosaic(self, index):
         # YOLOv5 4-mosaic loader. Loads 1 image + 3 random images into a 4-image mosaic
@@ -272,6 +278,7 @@ class Dataload(Dataset):
             print(index)
             print(traceback.print_exc())
 
+
     def getvalitem(self, index):
         if index >= self.total_number:
             raise StopIteration
@@ -328,7 +335,7 @@ if __name__ == '__main__':
 
     all_dataloader = DataLoader(
         dataset = dataloader,
-        batch_size = 1,
+        batch_size = 12,
         shuffle = True,
         drop_last = True,
     )

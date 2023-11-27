@@ -1,16 +1,20 @@
 # AITOOTH
 AITOOTH is our code for MICCAI 2023 Challenges ：STS-基于2D 全景图像的牙齿分割任务
+Our paper "Diffusion-Based Conv-Former Dual-Encode U-Net: DDPM for Level Set Evolution Mapping - MICCAI STS 2023 Challenge"
 
+![https://github.com/aoxipo/AITOOTH/blob/main/assert/DDPM.png](https://github.com/aoxipo/AITOOTH/blob/main/assert/DDPM.png)
+![https://github.com/aoxipo/AITOOTH/blob/main/assert/ddpm_evolution_boundar.gif](https://github.com/aoxipo/AITOOTH/blob/main/assert/ddpm_evolution_boundar.gif)
 # Model
 
-We propose the RFM (Residual fusion module) module as the fundamental unit for the encoding and decoding process.  We find that the SK model has outstanding performance in feature layer fusion with convolution and group pre-processing.  Therefore, the SK structure is used to fuse the feature layers extracted by convolution and transformer.
-
-In order to better converge the boundary, we propose a boundary learning module, which predicts the image boundary conditions after the feature layer is encoded, and then splices the predicted boundary results with the predicted mask on the channel dimension to fit the final boundary and mask results through a low-cost network
-
-### alg core
-
-First, use the group transformer to extract features, then use three-layer convolution to extract features, and then use the sk model to fuse the two features.
-Second, in torch, we implement image processing with concave optimization and non-concave optimization for more convenient mask boundary graph generation.
+1. We propose the CMT module, which can learn the potential features of dif-
+   ferent distributions and frequencies in the features, and extract and reconstruct
+   them
+2. We propose a boundary learning model based on DDPM, where the level
+   set is constructed by predicting the level set function of the projection in the high
+   latitude space at the boundary. Subsequently, we employ the DDPM model to
+   find the optimal zero level set, which enabling us to effectively learn all potential
+   boundary features and select an appropriate partition boundary as our final
+   outcome
 
 # Train
 
@@ -26,33 +30,23 @@ All_dataloader = Dataload(
     image_shape =  (320, 640), #(240, 480), # (320, 640), #(256,256), #(320, 640),
     data_type = "train",
     need_gray = True,
-    data_aug = 2,
+    data_aug = 1,
     )
 # set right image shape
 ```
 
-### definition model
+### definition model 1 
 
 ```python
 method_dict = {
         0: "Unet",
-        1: "RESUNet",
-        2: 'RU',
         4: "GTU",
-        41:"FL GTU",
-        42:"GTU PVT",
-        43:"GTU PVT MLP",
- 		45:"GTU Diffusion"
-        5: "FL",
-        6: "Diffusion Unet"
-        8: "FL tiny",
-        9: "FL FPN",
-        91: "FL FPN 4 8",
-        92: "FL DETR ",
+        43:"DCMTDUNet",
+       	44:"DCMTDUNet_boundry",
     }
 trainer = Train( 
         1, image_size,
-        name = "GTU_pvt_mlp",
+        name = "DCMTDUNet_boundry",
         method_type = 43,
         is_show = False,
         batch_size = batch_size,
@@ -60,14 +54,50 @@ trainer = Train(
         split = False,
 )
 print(device)
-# trainer.load_parameter( "./save_best/GTU_pvt/best.pkl" )
+# trainer.load_parameter( "./save_best/DCMTDUNet_boundry/best.pkl" )
 trainer.train_and_test(100, train_loader, validate_loader)
 ```
 
-### Run 
-
+#### Run 
 ```shell
 python train.py
+```
+
+### definition broundry 
+
+```python
+logger =Logger( 
+   file_name = f"log_{name}.txt", 
+   file_mode = "w+", 
+   should_flush = True
+)
+All_dataloader = Dataload(
+   train_path, 
+   image_shape =  (image_size, image_size), #(240, 480), # (320, 640), #(256,256), #(320, 640),
+   data_type = "train",
+   need_gray = True,
+   data_aug = 1,
+   )
+dataloader = DataLoader(
+   dataset = All_dataloader,
+   batch_size = batch_size,
+   shuffle = True,
+   drop_last = True,
+)
+All_dataloader.create_dir(save_path)
+dataWarper = DataWarper().to(  device)
+# model setup
+net_model = DCFDU_with_ddpm_boundary(
+   1, 1, 
+   need_return_dict = True,
+   need_supervision = False,
+   decode_type = "mlp"
+).to(device)
+```
+
+#### Run 
+```shell
+python train_ddpm.py
 ```
 
 # Inference
@@ -78,14 +108,12 @@ jupyter notebook
 % open predict.ipynb to inference the model
 ```
 
-
-
 # Results
 
-![./assert/result.png](./assert/result.png)
+![https://github.com/aoxipo/AITOOTH/blob/main/assert/result.png](https://github.com/aoxipo/AITOOTH/blob/main/assert/result.png)
 
 Here is our result in tianchi rank board result and we got 129/839 rank,  Diffusion and Prompt is the future.
 
-###### GTUPvtMlp Result
+###### DCMTDUNet Result
 
-![100_-3.5179](./assert/100_3.5179.png)
+![100_-3.5179](https://github.com/aoxipo/AITOOTH/blob/main/assert/100_3.5179.png)

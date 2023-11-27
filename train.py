@@ -7,19 +7,13 @@ import torch
 import numpy as np
 import datetime
 import GPUtil
-import torchvision.transforms as transforms
-import matplotlib
-import matplotlib.pyplot as plt
 
-from utils.adploss import AdpLoss, diceCoeffv2, Cal_HausdorffDTLoss
-from utils.score import cal_all_score
+from utils.adploss import AdpLoss, diceCoeffv2
 from model_server.datawarper import DataWarper
-from utils.score_numpy import mean_iou_np, mean_dice_np, positive_recall, negative_recall
-
+from utils.score_numpy import normalized, positive_recall, negative_recall, normalized
 from utils.office_score import evaluateof2d
 from utils.show import display_progress
-from model_server.util import crop_tensor, cat_tensor
-from utils.utils import normalized
+from model_server.util import crop_tensor
 
 use_gpu = torch.cuda.is_available()
 torch.cuda.manual_seed(3407)
@@ -53,6 +47,7 @@ class Train():
         self.history_test_loss = []
         self.history_score = []
         self.split = split
+        self.debug = 3
         self.create(is_show)
 
     def create(self, is_show):
@@ -65,46 +60,16 @@ class Train():
             self.model = Model()
             print("build Unet model")
             
-        elif self.method_type == 1:
-            from model_server.RESUNet import RESUNet as Model
-            self.model = Model()
-            print("build RESUNet model")
-        elif self.method_type == 2:
-            from model_server.model import RUnet as Model
-            self.model = Model()
-            print("build RU model")
-
-        elif self.method_type == 3:
-            from model_server.FL_DETR import FPN as Model
-            self.model = Model(
-                    middle_channel = [32, 64, 128, 256],
-                    need_return_dict = True
-                )
-            print("build FPN model")
-        
         elif self.method_type == 4:
-            from model_server.GTU.models.GT_UNet import GT_U_DCNet as Model
-            self.model = Model(
-                   1, 1, 
-                   middle_channel = [64, 128, 256, 512, 768, 1024],
-                   encode_len = 6,
-                   need_return_dict = True,
-                   need_supervision = False,
-                   decode_type = "conv"
-                )
-            print(f"build {self.model.__class__.__name__} model")
-        
-        elif self.method_type == 42:
-            from model_server.GTU.models.GT_UNet import GT_U_DC_PVTNet as Model
+            from model_server.DCFDU.DCFDU_Net import GT_U_Net as Model
             self.model = Model(
                    1, 1, 
                    need_return_dict = True,
                    need_supervision = False,
-                   decode_type = "conv"
                 )
             print(f"build {self.model.__class__.__name__} model")
         elif self.method_type == 43:
-            from model_server.GTU.models.GT_UNet import GT_U_DC_PVTNet as Model
+            from model_server.DCFDU.DCFDU_Net import DCFDU_Net     as Model
             self.model = Model(
                    1, 1, 
                    need_return_dict = True,
@@ -112,121 +77,15 @@ class Train():
                    decode_type = "mlp"
                 )
             print(f"build {self.model.__class__.__name__} model")
-
-        elif self.method_type == 41:
-            from model_server.FL_GTU import FL_GTU as Model
+        elif self.method_type == 44:
+            from model_server.DCFDU import DCFDU_with_ddpm_boundary as Model
             self.model = Model(
-                   1, 1, need_return_dict = True
+                   1, 1, 
+                   need_return_dict = True,
+                   need_supervision = False,
+                   decode_type = "mlp"
                 )
-            print("build FPN_GTU model")
-
-        elif self.method_type == 5:
-            from model_server.FL3D import FL3D as Model
-            self.model = Model(1, 1)
-            print("build Focus on local")
-        elif self.method_type == 6:
-            from model_server.FPN import FL2D as Model
-            self.model = Model( 
-                in_channel = 1,
-                out_channel = 1,
-                middle_channel = 1, 
-                embed_shape = ( 2, 4),
-                nstack = 2,
-                batch_size = batch_size,
-                need_return_dict = True
-            )
-            print("build FL 2D local")
-        elif self.method_type == 7:
-            from model_server.FL_base import FL_base as Model
-            self.model = Model( 
-                in_channel = 1,
-                out_channel = 1,
-                middle_channel = 1, 
-                embed_shape = ( 2, 4),
-                batch_size = batch_size,
-                need_return_dict = True
-            )
-            print("build FL_base local")
-        elif self.method_type == 8:
-            from model_server.FL_seris import FL_tiny as Model
-            self.model = Model( 
-                in_channel = 1,
-                out_channel = 1,
-                middle_channel = 1, 
-                embed_shape = ( 2, 4),
-                batch_size = batch_size,
-                need_return_dict = True
-            )
-            print("build FL_tiny local")
-        elif self.method_type == 9:
-            from model_server.FPN import FL_FPN as Model
-            self.model = Model( 
-                in_channel = 1,
-                out_channel = 1,
-                middle_channel = 1, 
-                embed_shape = ( 2, 4),
-                batch_size = batch_size,
-                need_return_dict = True
-            )
-            print("build FL_FPN local")
-        elif self.method_type == 911:
-            from model_server.FPN_BEST import FL_FPN as Model
-            self.model = Model( 
-                in_channel = 1,
-                out_channel = 1,
-                middle_channel = 1, 
-                embed_shape = ( 2, 4),
-                batch_size = batch_size,
-                need_return_dict = True
-            )
-            print("build FL_FPN local")
-        elif self.method_type == 91:
-            from model_server.FPN import FL_FPN as Model
-            self.model = Model( 
-                in_channel = 1,
-                out_channel = 1,
-                middle_channel = 1, 
-                embed_shape = ( 3, 6),
-                batch_size = batch_size,
-                need_return_dict = True
-            )
-            print("build FL_FPN 3, 6 local")
-        elif self.method_type == 92:
-            from model_server.FL_DETR import FL_DETR as Model
-            self.model = Model( 
-                in_channel = 1,
-                out_channel = 1,
-                encode_len = 4, 
-                need_return_dict = True
-            )
-            print("build FL_DETR local")
-        elif self.method_type == 921:
-            from model_server.detr.FL_DETR_B import FL_DETR as Model
-            self.model = Model( 
-                in_channel = 1,
-                out_channel = 1,
-                encode_len = 4, 
-                need_return_dict = True
-            )
-            print("build FL_DETR B local")
-        elif self.method_type == 922:
-            from model_server.detr.FL_DETR_2 import FL_DETR as Model
-            self.model = Model( 
-                in_channel = 1,
-                out_channel = 1,
-                encode_len = 4, 
-                need_return_dict = True
-            )
-            print("build FL_DETR_2 local")
-        elif self.method_type == 923:
-            from model_server.detr.FL_DETR_reverse import FL_DETR as Model
-            self.model = Model( 
-                in_channel = 1,
-                out_channel = 1,
-                encode_len = 4, 
-                need_return_dict = True
-            )
-            print("build FL_DETR_reverse local")
+            print(f"build {self.model.__class__.__name__} model")
         else:
             raise NotImplementedError
         
@@ -251,7 +110,8 @@ class Train():
     def train_and_test(self, n_epochs, data_loader_train, data_loader_test):
         best_loss = 1000000
         es = 0
-        
+        epoch_train_loss = 0
+        epoch_test_loss = 0
         self.save_parameter()
         for epoch in range(n_epochs):
             sc = False
@@ -276,11 +136,12 @@ class Train():
                     (n_epochs - 1 - epoch) * (datetime.datetime.now() - start_time).seconds / 60,
                 )
             )
-            if epoch % 10 == 0:
+            if epoch % 5 == 0:
                 for image, mask in data_loader_test:
                     mask = mask[0].to(device)
                     output = self.predict_batch(image)
                     break
+                
                 display_progress(image[0], mask[0][0].unsqueeze(0), output['mask'][0], edge = output['edge'][0], current_epoch = epoch, save = True, save_path = "./save/" + self.name + "/")
             if (epoch <= 4):
                 continue
@@ -299,7 +160,7 @@ class Train():
                         
                     break
         self.save_history()
-        self.save_parameter()
+        self.save_parameter("./save/", "best")
 
     def test(self, data_loader_test, need_score = False):
         self.model.eval()
@@ -345,15 +206,18 @@ class Train():
                     mask = outputs["mask"].detach().cpu()
 
                     for i in range(len(mask)):
-                        pred = np.array(normalized( mask[i].squeeze().numpy()) * 255, dtype=np.uint8)
-                        label = np.array(normalized( gt[i].squeeze().numpy()) * 255, dtype=np.uint8)
+                        pred = np.array(normalized( mask[i].squeeze().numpy()) )
+                        label = np.array(normalized( gt[i].squeeze().numpy()) )
                         score_dice, score_iou, score_hd = evaluateof2d(pred, label)
+
+                        nr.append(negative_recall(label, pred))
+                        pr.append(positive_recall(label, pred))
                         iou.append(score_iou)
                         dice.append(score_dice)
                         hd.append(score_hd)
-
-                    nr.append(negative_recall(gt, mask))
-                    pr.append(positive_recall(gt, mask))
+                    
+                    # nr.append(negative_recall(gt, mask))
+                    # pr.append(positive_recall(gt, mask))
         # mean_iou_np(), mean_dice_np(), positive_recall(), negative_recall()
         if need_score:
             score = 0.4* np.mean( dice ) + 0.3* np.mean( iou ) + 0.3* np.mean( hd )
@@ -387,13 +251,19 @@ class Train():
                 y_gt = crop_tensor(y_gt, w, 2*w, axis = 0)
                 y_edge = crop_tensor(y_edge, w, 2*w, axis = 0)
             # print("训练中 train {}".format(X_train.shape))
+            if self.debug:
+                self.debug -= 1
+                print(X_train.shape, y_gt.shape)
             self.optimizer.zero_grad()
+
             X_train, level_set = self.data_warper(X_train, y_gt)
             outputs = self.model(X_train)
+            # print( outputs["mask"].shape, y_gt.shape )
             loss1 = self.cost(outputs["mask"], y_gt)
-            loss2 = self.l1(outputs["levelset"], level_set)
-            loss_dice_1 = diceCoeffv2( outputs["mask"], y_gt )
             loss_cross = self.encropy_cost(outputs["mask"], y_gt)
+            # loss2 = self.l1(outputs["levelset"], level_set)
+            # loss_dice_1 = diceCoeffv2( outputs["mask"], y_gt )
+            # loss_cross = self.encropy_cost(outputs["mask"], y_gt)
            
             # loss_hd =  0.5 * loss_hd_1 + 0.5 * loss_hd_3
             # loss_dice = loss_dice_1 + 0.3 * loss1
@@ -403,9 +273,9 @@ class Train():
             #     loss_dice += 0.1 * loss_dice_2
                 # loss_hd += 0.1 * loss_hd_2
 
-            loss = 0.5 * loss1 + 0.5 * loss2 + 0.3 * loss_dice_1 + 0.5 * loss_cross 
-            if loss1 < 0.1:
-                loss += 0.1 * self.cost(outputs["edge"], y_edge) + 0.1 * self.encropy_cost(outputs["edge"], y_edge)
+            loss = 0.5 * loss1  +  0.5 * loss_cross  #0.5 * loss2 + 0.3 * loss_dice_1 + 0.5 * loss_cross 
+            # if loss2 < 0.1:
+            #     loss += 0.1 * self.cost(outputs["edge"], y_edge) + 0.1 * self.encropy_cost(outputs["edge"], y_edge)
             # super_gt = y_gt
             # for index in range(len(supervision) - 1):
             #     super_gt = self.downsample(super_gt)
@@ -477,21 +347,27 @@ class Train():
 import shutil
 
 device = "cuda:0"
+from utils.logger import Logger
 if __name__ == "__main__":
-    batch_size = 12
+    name = "DCMTDUNet_train"
+    logger =Logger( 
+        file_name = f"log_{name}.txt", 
+        file_mode = "w+", 
+        should_flush = True
+    )
+    batch_size = 6
     image_size = 320
-    train_path = r'/data0/lijunlin_data/teech/train/'
+    train_path = r'/T2004100/data/tooth/all-train/labelled' # r'/T2004100/data/tooth/train/'
    
     All_dataloader = Dataload(
         train_path, 
-        image_shape =  (320, 640), #(240, 480), # (320, 640), #(256,256), #(320, 640),
+        image_shape =  (320, 320), #(240, 480), # (320, 640), #(256,256), #(320, 640),
         data_type = "train",
         need_gray = True,
-        data_aug = 2,
+        data_aug = 1,
         )
     
     train_size = int(len(All_dataloader) * 0.8)
-    print("size :", train_size)
  
     train_subset = CustomSubset(All_dataloader, np.arange(train_size))
     val_subset = CustomSubset(All_dataloader, np.arange(train_size, len(All_dataloader)), dtype = "val")
@@ -510,32 +386,24 @@ if __name__ == "__main__":
     )
     method_dict = {
         0: "Unet",
-        1: "RESUNet",
-        2: 'RU',
         4: "GTU",
-        41:"FL GTU",
-        42:"GTU PVT",
-        5: "FL",
-        8: "FL tiny",
-        9: "FL FPN",
-        91: "FL FPN 4 8",
-        92: "FL DETR ",
+        43:"DCMTDUNet",
+       44:"DCMTDUNet_boundry",
     }
 
     trainer = Train( 
         1, image_size,
-        name = "GTU_pvt_mlp",
-        method_type = 43,
+        name = name,
+        method_type = 44,
         is_show = False,
         batch_size = batch_size,
-        device_ = "cuda:3",
+        device_ = device,
         split = False,
     )
     print(device)
-    # trainer.load_parameter( "./save_best/GTU_pvt/best.pkl" )
+    trainer.load_parameter( "/T2004100/project/upload/save/DCMTDUNet/ckpt_40_.pt" )
+    trainer.train_and_test(101, train_loader, validate_loader)
 
-    trainer.train_and_test(100, train_loader, validate_loader)
-
-    shutil.copy('./log.txt', f'./save/{trainer.name}/')
+    shutil.copy(f'./log_{name}.txt', f'./save/{trainer.name}/')
 
 
