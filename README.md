@@ -17,7 +17,7 @@ Our paper "Diffusion-Based Conv-Former Dual-Encode U-Net: DDPM for Level Set Evo
    outcome
 
 # Train
-
+note: if you just want to add boundary to your model, by this way [boundary module helper](./boundry/README.md)
 ### Modify configuration file
 
 ```python
