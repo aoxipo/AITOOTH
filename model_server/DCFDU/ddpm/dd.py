@@ -162,7 +162,7 @@ class GaussianDiffusionTrainer(nn.Module):
             extract(self.sqrt_one_minus_alphas_bar, t, x_0.shape) * noise)
         x_t = torch.clip(x_t, 0, 1)
         
-        ans = self.model_train_extract(x_t, t, x_feature)
+        ans = self.model_train_extract(x_t, levelset, t)
         loss = self.l1_loss( ans, noise)
         return loss
 
@@ -179,8 +179,8 @@ class GaussianDiffusionTrainer(nn.Module):
             levelset[ind][ levelset[ind] < x_0[ind] ] = 0
         return levelset, x_0
     
-    def model_train_extract(self, x, t, middle_feature):
-        levelset_index = self.model.bround_ddpm( x, middle_feature, t )
+    def model_train_extract(self, x, levelset, t):
+        levelset_index = self.model.bound_ddpm( x, levelset, t )
         return levelset_index
 
 class GaussianDiffusionSampler(nn.Module):
