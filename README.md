@@ -117,7 +117,7 @@ Here is our result in tianchi rank board result and we got 129/839 rank,  Diffus
 
 ###### DCMTDUNet Result
 
-<!-- ![good case](https://github.com/aoxipo/AITOOTH/blob/main/assert/img1.png) -->
+![good case](https://github.com/aoxipo/AITOOTH/blob/main/assert/img1.png)
 
 
 <div style = "align:center; display: flex;" >
