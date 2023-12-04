@@ -121,7 +121,7 @@ Here is our result in tianchi rank board result and we got 129/839 rank,  Diffus
 
 
 <div style = "align:center; display: flex;" >
-   <div style = "writing-mode:vertical-lr;text-align: center;" width = "8%", height = "100%"><strong>Case 0125</strong></div>
+   <div style = "writing-mode: tb;text-align: center;" width = "8%", height = "100%"><strong>Case 0125</strong></div>
    <div style = "direction: ltr;"  width = "90%">
       <img src="https://github.com/aoxipo/AITOOTH/blob/main/assert/read/test_125.png" width="22%" height="90%"><img src="https://github.com/aoxipo/AITOOTH/blob/main/assert/read/test_125_mask.png" width="22%" height="90%"><img src="https://github.com/aoxipo/AITOOTH/blob/main/assert/read/test_125edge.png" width="22%" height="90%"/><img src="https://github.com/aoxipo/AITOOTH/blob/main/assert/read/test_125_levelset.png" width="22%" height="90%"/>
    </div>
@@ -129,7 +129,7 @@ Here is our result in tianchi rank board result and we got 129/839 rank,  Diffus
     
 
 <div style = "align:center; display: flex;" >
-   <div style = "writing-mode:vertical-lr;text-align: center;" width = "8%", height = "100%"><strong>Case 0165</strong></div>
+   <div style = "writing-mode: tb;text-align: center;" width = "8%", height = "100%"><strong>Case 0165</strong></div>
    <div style = "direction: ltr;"  width = "90%">
       <img src="https://github.com/aoxipo/AITOOTH/blob/main/assert/read/test_165.png" width="22%" height="90%"><img src="https://github.com/aoxipo/AITOOTH/blob/main/assert/read/test_165_mask.png" width="22%" height="90%"><img src="https://github.com/aoxipo/AITOOTH/blob/main/assert/read/test_165edge.png" width="22%" height="90%"/><img src="https://github.com/aoxipo/AITOOTH/blob/main/assert/read/test_165_levelset.png" width="22%" height="90%"/>
    </div>
@@ -137,7 +137,7 @@ Here is our result in tianchi rank board result and we got 129/839 rank,  Diffus
     
 
 <div style = "align:center; display: flex;" >
-   <div style = "writing-mode:vertical-lr;text-align: center;" width = "8%", height = "100%"><strong>Case 0017</strong></div>
+   <div style = "writing-mode: tb;text-align: center;" width = "8%", height = "100%"><strong>Case 0017</strong></div>
    <div style = "direction: ltr;"  width = "90%">
       <img src="https://github.com/aoxipo/AITOOTH/blob/main/assert/read/test_17.png" width="22%" height="90%"><img src="https://github.com/aoxipo/AITOOTH/blob/main/assert/read/test_17_mask.png" width="22%" height="90%"><img src="https://github.com/aoxipo/AITOOTH/blob/main/assert/read/test_17edge.png" width="22%" height="90%"/><img src="https://github.com/aoxipo/AITOOTH/blob/main/assert/read/test_17_levelset.png" width="22%" height="90%"/>
    </div>
@@ -145,7 +145,7 @@ Here is our result in tianchi rank board result and we got 129/839 rank,  Diffus
     
 
 <div style = "align:center; display: flex;" >
-   <div style = "writing-mode:vertical-lr;text-align: center;" width = "8%", height = "100%"><strong>Case 0174</strong></div>
+   <div style = "writing-mode: tb;text-align: center;" width = "8%", height = "100%"><strong>Case 0174</strong></div>
    <div style = "direction: ltr;"  width = "90%">
       <img src="https://github.com/aoxipo/AITOOTH/blob/main/assert/read/test_174.png" width="22%" height="90%"><img src="https://github.com/aoxipo/AITOOTH/blob/main/assert/read/test_174_mask.png" width="22%" height="90%"><img src="https://github.com/aoxipo/AITOOTH/blob/main/assert/read/test_174edge.png" width="22%" height="90%"/><img src="https://github.com/aoxipo/AITOOTH/blob/main/assert/read/test_174_levelset.png" width="22%" height="90%"/>
    </div>
@@ -153,7 +153,7 @@ Here is our result in tianchi rank board result and we got 129/839 rank,  Diffus
     
 
 <div style = "align:center; display: flex;" >
-   <div style = "writing-mode:vertical-lr;text-align: center;" width = "8%", height = "100%"><strong>Case 0218</strong></div>
+   <div style = "writing-mode: tb;text-align: center;" width = "8%", height = "100%"><strong>Case 0218</strong></div>
    <div style = "direction: ltr;"  width = "90%">
       <img src="https://github.com/aoxipo/AITOOTH/blob/main/assert/read/test_218.png" width="22%" height="90%"><img src="https://github.com/aoxipo/AITOOTH/blob/main/assert/read/test_218_mask.png" width="22%" height="90%"><img src="https://github.com/aoxipo/AITOOTH/blob/main/assert/read/test_218edge.png" width="22%" height="90%"/><img src="https://github.com/aoxipo/AITOOTH/blob/main/assert/read/test_218_levelset.png" width="22%" height="90%"/>
    </div>
@@ -161,7 +161,7 @@ Here is our result in tianchi rank board result and we got 129/839 rank,  Diffus
     
 
 <div style = "align:center; display: flex;" >
-   <div style = "writing-mode:vertical-lr;text-align: center;" width = "8%", height = "100%"><strong>Case 0248</strong></div>
+   <div style = "writing-mode: tb;text-align: center;" width = "8%", height = "100%"><strong>Case 0248</strong></div>
    <div style = "direction: ltr;"  width = "90%">
       <img src="https://github.com/aoxipo/AITOOTH/blob/main/assert/read/test_248.png" width="22%" height="90%"><img src="https://github.com/aoxipo/AITOOTH/blob/main/assert/read/test_248_mask.png" width="22%" height="90%"><img src="https://github.com/aoxipo/AITOOTH/blob/main/assert/read/test_248edge.png" width="22%" height="90%"/><img src="https://github.com/aoxipo/AITOOTH/blob/main/assert/read/test_248_levelset.png" width="22%" height="90%"/>
    </div>
@@ -169,7 +169,7 @@ Here is our result in tianchi rank board result and we got 129/839 rank,  Diffus
     
 
 <div style = "align:center; display: flex;" >
-   <div style = "writing-mode:vertical-lr;text-align: center;" width = "8%", height = "100%"><strong>Case 0040</strong></div>
+   <div style = "writing-mode: tb;text-align: center;" width = "8%", height = "100%"><strong>Case 0040</strong></div>
    <div style = "direction: ltr;"  width = "90%">
       <img src="https://github.com/aoxipo/AITOOTH/blob/main/assert/read/test_40.png" width="22%" height="90%"><img src="https://github.com/aoxipo/AITOOTH/blob/main/assert/read/test_40_mask.png" width="22%" height="90%"><img src="https://github.com/aoxipo/AITOOTH/blob/main/assert/read/test_40edge.png" width="22%" height="90%"/><img src="https://github.com/aoxipo/AITOOTH/blob/main/assert/read/test_40_levelset.png" width="22%" height="90%"/>
    </div>
@@ -177,7 +177,7 @@ Here is our result in tianchi rank board result and we got 129/839 rank,  Diffus
     
 
 <div style = "align:center; display: flex;" >
-   <div style = "writing-mode:vertical-lr;text-align: center;" width = "8%", height = "100%"><strong>Case 0041</strong></div>
+   <div style = "writing-mode: tb;text-align: center;" width = "8%", height = "100%"><strong>Case 0041</strong></div>
    <div style = "direction: ltr;"  width = "90%">
       <img src="https://github.com/aoxipo/AITOOTH/blob/main/assert/read/test_41.png" width="22%" height="90%"><img src="https://github.com/aoxipo/AITOOTH/blob/main/assert/read/test_41_mask.png" width="22%" height="90%"><img src="https://github.com/aoxipo/AITOOTH/blob/main/assert/read/test_41edge.png" width="22%" height="90%"/><img src="https://github.com/aoxipo/AITOOTH/blob/main/assert/read/test_41_levelset.png" width="22%" height="90%"/>
    </div>
@@ -185,7 +185,7 @@ Here is our result in tianchi rank board result and we got 129/839 rank,  Diffus
     
 
 <div style = "align:center; display: flex;" >
-   <div style = "writing-mode:vertical-lr;text-align: center;" width = "8%", height = "100%"><strong>Case 0049</strong></div>
+   <div style = "writing-mode: tb;text-align: center;" width = "8%", height = "100%"><strong>Case 0049</strong></div>
    <div style = "direction: ltr;"  width = "90%">
       <img src="https://github.com/aoxipo/AITOOTH/blob/main/assert/read/test_49.png" width="22%" height="90%"><img src="https://github.com/aoxipo/AITOOTH/blob/main/assert/read/test_49_mask.png" width="22%" height="90%"><img src="https://github.com/aoxipo/AITOOTH/blob/main/assert/read/test_49edge.png" width="22%" height="90%"/><img src="https://github.com/aoxipo/AITOOTH/blob/main/assert/read/test_49_levelset.png" width="22%" height="90%"/>
    </div>
@@ -193,7 +193,7 @@ Here is our result in tianchi rank board result and we got 129/839 rank,  Diffus
     
 
 <div style = "align:center; display: flex;" >
-   <div style = "writing-mode:vertical-lr;text-align: center;" width = "8%", height = "100%"><strong>Case 0050</strong></div>
+   <div style = "writing-mode: tb;text-align: center;" width = "8%", height = "100%"><strong>Case 0050</strong></div>
    <div style = "direction: ltr;"  width = "90%">
       <img src="https://github.com/aoxipo/AITOOTH/blob/main/assert/read/test_50.png" width="22%" height="90%"><img src="https://github.com/aoxipo/AITOOTH/blob/main/assert/read/test_50_mask.png" width="22%" height="90%"><img src="https://github.com/aoxipo/AITOOTH/blob/main/assert/read/test_50edge.png" width="22%" height="90%"/><img src="https://github.com/aoxipo/AITOOTH/blob/main/assert/read/test_50_levelset.png" width="22%" height="90%"/>
    </div>
@@ -201,7 +201,7 @@ Here is our result in tianchi rank board result and we got 129/839 rank,  Diffus
     
 
 <div style = "align:center; display: flex;" >
-   <div style = "writing-mode:vertical-lr;text-align: center;" width = "8%", height = "100%"><strong>Case 0053</strong></div>
+   <div style = "writing-mode: tb;text-align: center;" width = "8%", height = "100%"><strong>Case 0053</strong></div>
    <div style = "direction: ltr;"  width = "90%">
       <img src="https://github.com/aoxipo/AITOOTH/blob/main/assert/read/test_53.png" width="22%" height="90%"><img src="https://github.com/aoxipo/AITOOTH/blob/main/assert/read/test_53_mask.png" width="22%" height="90%"><img src="https://github.com/aoxipo/AITOOTH/blob/main/assert/read/test_53edge.png" width="22%" height="90%"/><img src="https://github.com/aoxipo/AITOOTH/blob/main/assert/read/test_53_levelset.png" width="22%" height="90%"/>
    </div>
@@ -209,15 +209,15 @@ Here is our result in tianchi rank board result and we got 129/839 rank,  Diffus
     
 
 <div style = "align:center; display: flex;" >
-   <div style = "writing-mode:vertical-lr;text-align: center;" width = "8%", height = "100%"><strong>Case 0009</strong></div>
+   <div style = "writing-mode: tb;text-align: center;" width = "8%", height = "100%"><strong>Case 0009</strong></div>
    <div style = "direction: ltr;"  width = "90%">
       <img src="https://github.com/aoxipo/AITOOTH/blob/main/assert/read/test_9.png" width="22%" height="90%"><img src="https://github.com/aoxipo/AITOOTH/blob/main/assert/read/test_9_mask.png" width="22%" height="90%"><img src="https://github.com/aoxipo/AITOOTH/blob/main/assert/read/test_9edge.png" width="22%" height="90%"/><img src="https://github.com/aoxipo/AITOOTH/blob/main/assert/read/test_9_levelset.png" width="22%" height="90%"/>
    </div>
 </div>
 
-<div style = "align:center;text-align: center;display: flex; width:100%" >
-   <div style = "direction: ltr; width:23%;" ><strong>Image</strong></div>
-    <div style = "direction: ltr; width:23%;" ><strong>Predict Mask</strong></div>
-     <div style = "direction: ltr; width:22%;" ><strong>Predict Edge</strong></div>
-      <div style = "direction: ltr; width:20%;" ><strong>Predict Level Set Funtion</strong></div>
+<div style = "align:center;text-align: center;display: flex; width:100%;" >
+   <div style = "display: flex; width:25%;" ><strong>Image</strong></div>
+    <div style = "display: flex; width:23%;" ><strong>Predict Mask</strong></div>
+     <div style = "display: flex; width:22%;" ><strong>Predict Edge</strong></div>
+      <div style = "display: flex;width:20%;" ><strong>Predict Level Set Funtion</strong></div>
 </div>
