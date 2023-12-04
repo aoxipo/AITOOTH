@@ -215,9 +215,9 @@ Here is our result in tianchi rank board result and we got 129/839 rank,  Diffus
    </div>
 </div>
 
-<div style = "align:center;text-align: center;display: flex; width:100%;" >
-   <div style = "display: flex; width:25%;" ><strong>Image</strong></div>
-    <div style = "display: flex; width:23%;" ><strong>Predict Mask</strong></div>
-     <div style = "display: flex; width:22%;" ><strong>Predict Edge</strong></div>
-      <div style = "display: flex;width:20%;" ><strong>Predict Level Set Funtion</strong></div>
+<div style = "display:flex;" >
+   <div style = "width:25%;" ><strong>Image</strong></div>
+    <div style = " width:23%;" ><strong>Predict Mask</strong></div>
+     <div style = "width:22%;" ><strong>Predict Edge</strong></div>
+      <div style = "width:20%;" ><strong>Predict Level Set Funtion</strong></div>
 </div>
