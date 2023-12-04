@@ -8,7 +8,7 @@ Our paper "Diffusion-Based Conv-Former Dual-Encode U-Net: DDPM for Level Set Evo
 ![https://github.com/aoxipo/AITOOTH/blob/main/assert/DDPM.png](https://github.com/aoxipo/AITOOTH/blob/main/assert/DDPM.png)
 # Good Case
 ![good case](https://github.com/aoxipo/AITOOTH/blob/main/assert/img1.png)
-
+<!-- 
 <div style = "align:center; display: flex;" >
    <div style = "writing-mode: tb;text-align: center;" width = "8%", height = "100%"><strong>Case 0125</strong></div>
    <div style = "direction: ltr;"  width = "90%">
@@ -109,7 +109,7 @@ Our paper "Diffusion-Based Conv-Former Dual-Encode U-Net: DDPM for Level Set Evo
     <div style = " width:23%;" ><strong>Predict Mask</strong></div>
      <div style = "width:22%;" ><strong>Predict Edge</strong></div>
       <div style = "width:20%;" ><strong>Predict Level Set Funtion</strong></div>
-</div>
+</div>-->
 
 # Model
 
