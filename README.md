@@ -110,6 +110,7 @@ Our paper "Diffusion-Based Conv-Former Dual-Encode U-Net: DDPM for Level Set Evo
      <div style = "width:22%;" ><strong>Predict Edge</strong></div>
       <div style = "width:20%;" ><strong>Predict Level Set Funtion</strong></div>
 </div>
+
 # Model
 
 1. We propose the CMT module, which can learn the potential features of dif-
