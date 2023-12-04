@@ -6,6 +6,7 @@ see assert/ddpm_evolution_boundar.gif
 AITOOTH is our code for MICCAI 2023 Challenges ：STS-基于2D 全景图像的牙齿分割任务
 Our paper "Diffusion-Based Conv-Former Dual-Encode U-Net: DDPM for Level Set Evolution Mapping - MICCAI STS 2023 Challenge"
 ![https://github.com/aoxipo/AITOOTH/blob/main/assert/DDPM.png](https://github.com/aoxipo/AITOOTH/blob/main/assert/DDPM.png)
+
 # Good Case
 ![good case](https://github.com/aoxipo/AITOOTH/blob/main/assert/img1.png)
 
