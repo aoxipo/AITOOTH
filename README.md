@@ -5,6 +5,7 @@ see [./assert/ddpm_evolution_boundar.gif](https://github.com/aoxipo/AITOOTH/blob
 # AITOOTH
 AITOOTH is our code for MICCAI 2023 Challenges ：STS-基于2D 全景图像的牙齿分割任务
 Our paper "Diffusion-Based Conv-Former Dual-Encode U-Net: DDPM for Level Set Evolution Mapping - MICCAI STS 2023 Challenge"
+are onlined at ![https://link.springer.com/chapter/10.1007/978-3-031-72396-4_8] 
 ![https://github.com/aoxipo/AITOOTH/blob/main/assert/DDPM.png](https://github.com/aoxipo/AITOOTH/blob/main/assert/DDPM.png)
 
 # Good Case
@@ -119,4 +120,29 @@ jupyter notebook
 ![https://github.com/aoxipo/AITOOTH/blob/main/assert/result.png](https://github.com/aoxipo/AITOOTH/blob/main/assert/result.png)
 
 Here is our result in tianchi rank board result and we got 129/839 rank on first board and got 36 on final board, got Top 8 on online board.
+
+# cite 
+```
+@InProceedings{10.1007/978-3-031-72396-4_8,
+author="Li, Junlin
+and Tian, Weixin
+and Li, Junliang
+and He, Yuan
+and Ke, Wanglin",
+editor="Wang, Yaqi
+and Chen, Xiaodiao
+and Qian, Dahong
+and Ye, Fan
+and Wang, Shuai
+and Zhang, Hongyuan",
+title="Diffusion-Based Conv-Former Dual-Encode U-Net: DDPM for Level Set Evolution Mapping MICCAI STS 2023 Challenge",
+booktitle="Semi-supervised Tooth Segmentation",
+year="2025",
+publisher="Springer Nature Switzerland",
+address="Cham",
+pages="83--95",
+abstract="We propose the Diffusion-Based Conv-Former U-Net (DCFDU-Net) model for panoramic CT segmentation tasks. Our model primarily employs a dual-encode structure, comprising the CMT and PVT modules. To enhance boundary precision, we incorporated a novel boundary learning module inspired by DDPM and level set. This module constructs the level set function by initially predicting the boundary in a high-dimensional space projection. Then uses the DDPM model to evolve this projection, facilitating the accurate delineation of the zero level set. Finally, the boundaries and mask outcomes are refined through an efficient, cost-effective network architecture. Our method achieved an average DICE score of 91.81{\%} and an average IOU score of 96.35{\%}, with an average HD distance of 0.0332 for teeth segmentation on the validation set using an NVIDIA GeForce RTX 3090 GPU. The average running time was 0.91 s per image. The code is available at https://github.com/aoxipo/AITOOTH.",
+isbn="978-3-031-72396-4"
+}
+```
 
